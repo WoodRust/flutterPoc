@@ -29,13 +29,18 @@ class _BattlefieldScreenState extends State<BattlefieldScreen> {
     // Calculate minScale to ensure the battlefield always fits the width or height
     double minScale = screenWidth / battlefieldWidth;
 
+    // Define boundary margin to restrict panning horizontally (10% of screen width)
+    double horizontalBoundaryMargin = screenWidth * 0.05; // 5% from each side
+
     return Scaffold(
       appBar: AppBar(title: Text("Battlefield")),
       body: InteractiveViewer(
-        boundaryMargin:
-            EdgeInsets.all(double.infinity), // Allow movement beyond edges
-        minScale: minScale,
-        maxScale: 3.0,
+        boundaryMargin: EdgeInsets.symmetric(
+          horizontal: horizontalBoundaryMargin, // Limit horizontal panning
+          vertical: double.infinity, // Allow full vertical panning
+        ),
+        minScale: minScale, // Minimum scale based on the width
+        maxScale: 3.0, // Max zoom in
         child: Center(
           child: AspectRatio(
             aspectRatio: battlefieldAspectRatio,
