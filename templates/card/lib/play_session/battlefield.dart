@@ -9,6 +9,7 @@ class BattlefieldScreen extends StatefulWidget {
 class _BattlefieldScreenState extends State<BattlefieldScreen> {
   late TransformationController _controller;
   late double minScale;
+  late double battlefieldWidth, battlefieldHeight;
 
   @override
   void initState() {
@@ -18,21 +19,21 @@ class _BattlefieldScreenState extends State<BattlefieldScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Get screen size
+    // Get screen dimensions
     double screenWidth = MediaQuery.of(context).size.width;
     double screenHeight = MediaQuery.of(context).size.height;
 
     // Define battlefield dimensions (6:4 ratio)
-    double battlefieldWidth = screenWidth;
-    double battlefieldHeight = (battlefieldWidth * 4) / 6;
+    battlefieldWidth = screenWidth;
+    battlefieldHeight = (battlefieldWidth * 4) / 6;
 
-    // Ensure battlefield fits within screen height
+    // Adjust if battlefield is too tall for the screen
     if (battlefieldHeight > screenHeight) {
       battlefieldHeight = screenHeight;
       battlefieldWidth = (battlefieldHeight * 6) / 4;
     }
 
-    // Calculate minScale so battlefield always fills screen width
+    // Calculate minimum scale to ensure full battlefield fills width
     minScale = screenWidth / battlefieldWidth;
 
     return Scaffold(
@@ -40,12 +41,12 @@ class _BattlefieldScreenState extends State<BattlefieldScreen> {
       body: Center(
         child: InteractiveViewer(
           transformationController: _controller,
-          boundaryMargin: EdgeInsets.zero, // Prevents moving outside bounds
+          boundaryMargin: EdgeInsets.zero, // Prevents white space
           minScale: minScale,
           maxScale: 3.0,
-          constrained: false, // Allows proper panning
-          onInteractionEnd: (details) {
-            _limitPan(); // Restrict panning **only after zooming**
+          constrained: false, // Allows free movement
+          onInteractionUpdate: (_) {
+            _limitPan(); // Apply pan limits dynamically
           },
           child: SizedBox(
             width: battlefieldWidth,
@@ -55,14 +56,14 @@ class _BattlefieldScreenState extends State<BattlefieldScreen> {
                 // Battlefield Image (Bottom Layer)
                 Positioned.fill(
                   child: Image.asset(
-                    'assets/images/battlefield.jpg', // Ensure this image is added to assets
+                    'assets/images/battlefield.jpg', // Make sure this image exists in assets
                     fit: BoxFit.cover,
                   ),
                 ),
 
                 // Overlaying Rectangle (Scaled to battlefield)
                 Positioned(
-                  left: battlefieldWidth * 0.2, // Adjust position
+                  left: battlefieldWidth * 0.2,
                   top: battlefieldHeight * 0.2,
                   child: Container(
                     width: battlefieldWidth *
@@ -80,22 +81,33 @@ class _BattlefieldScreenState extends State<BattlefieldScreen> {
     );
   }
 
-  // Restrict panning **only when zooming stops**
+  /// Restrict panning to prevent white space while keeping zoom functional
   void _limitPan() {
     final Matrix4 matrix = _controller.value;
     double scale = matrix.getMaxScaleOnAxis();
 
-    // Calculate max translation values dynamically
-    double maxX = ((scale * 6 / minScale) - 6) / 2 * minScale;
-    double maxY = ((scale * 4 / minScale) - 4) / 2 * minScale;
+    // Calculate scaled battlefield dimensions
+    double scaledWidth = battlefieldWidth * scale;
+    double scaledHeight = battlefieldHeight * scale;
 
-    // Clamp translation values **without affecting zoom**
-    double clampedX = matrix[12].clamp(-maxX, maxX);
-    double clampedY = matrix[13].clamp(-maxY, maxY);
+    // Calculate screen limits
+    double maxX = (scaledWidth - battlefieldWidth) / 2;
+    double maxY = (scaledHeight - battlefieldHeight) / 2;
 
-    _controller.value = Matrix4.identity()
-      ..translate(clampedX, clampedY)
-      ..scale(scale);
+    // Get current translation values
+    double currentX = matrix[12];
+    double currentY = matrix[13];
+
+    // Clamp panning within battlefield limits
+    double clampedX = currentX.clamp(-maxX, maxX);
+    double clampedY = currentY.clamp(-maxY, maxY);
+
+    // Apply only if needed to prevent unnecessary resets
+    if (clampedX != currentX || clampedY != currentY) {
+      _controller.value = Matrix4.identity()
+        ..translate(clampedX, clampedY)
+        ..scale(scale);
+    }
   }
 
   @override
