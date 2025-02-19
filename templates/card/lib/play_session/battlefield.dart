@@ -9,7 +9,6 @@ class BattlefieldScreen extends StatefulWidget {
 class _BattlefieldScreenState extends State<BattlefieldScreen> {
   late TransformationController _controller;
   late double minScale;
-  late double maxX, maxY;
 
   @override
   void initState() {
@@ -36,10 +35,6 @@ class _BattlefieldScreenState extends State<BattlefieldScreen> {
     // Calculate minScale so battlefield always fills screen width
     minScale = screenWidth / battlefieldWidth;
 
-    // Define max panning limits based on zoom
-    maxX = (battlefieldWidth * minScale - screenWidth) / 2;
-    maxY = (battlefieldHeight * minScale - screenHeight) / 2;
-
     return Scaffold(
       appBar: AppBar(title: Text("Battlefield")),
       body: Center(
@@ -49,8 +44,8 @@ class _BattlefieldScreenState extends State<BattlefieldScreen> {
           minScale: minScale,
           maxScale: 3.0,
           constrained: false, // Allows proper panning
-          onInteractionUpdate: (details) {
-            _limitPan();
+          onInteractionEnd: (details) {
+            _limitPan(); // Restrict panning **only after zooming**
           },
           child: SizedBox(
             width: battlefieldWidth,
@@ -85,16 +80,16 @@ class _BattlefieldScreenState extends State<BattlefieldScreen> {
     );
   }
 
-  // Restrict panning to prevent white space
+  // Restrict panning **only when zooming stops**
   void _limitPan() {
     final Matrix4 matrix = _controller.value;
     double scale = matrix.getMaxScaleOnAxis();
 
-    // Calculate max translation values
-    double maxX = (scale * 6 / minScale - 6) / 2 * minScale;
-    double maxY = (scale * 4 / minScale - 4) / 2 * minScale;
+    // Calculate max translation values dynamically
+    double maxX = ((scale * 6 / minScale) - 6) / 2 * minScale;
+    double maxY = ((scale * 4 / minScale) - 4) / 2 * minScale;
 
-    // Clamp translation values
+    // Clamp translation values **without affecting zoom**
     double clampedX = matrix[12].clamp(-maxX, maxX);
     double clampedY = matrix[13].clamp(-maxY, maxY);
 
