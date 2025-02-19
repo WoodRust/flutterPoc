@@ -13,43 +13,45 @@ class _BattlefieldScreenState extends State<BattlefieldScreen> {
     double screenWidth = MediaQuery.of(context).size.width;
     double screenHeight = MediaQuery.of(context).size.height;
 
-    // Define battlefield dimensions (6:4 ratio)
-    double battlefieldWidth = screenWidth;
-    double battlefieldHeight = (battlefieldWidth * 4) / 6;
+    // Define battlefield aspect ratio (6:4)
+    double battlefieldAspectRatio = 6 / 4;
 
-    // Ensure battlefield fits within screen height
+    // Set initial battlefield size to fit screen while maintaining aspect ratio
+    double battlefieldWidth = screenWidth;
+    double battlefieldHeight = screenWidth / battlefieldAspectRatio;
+
+    // Ensure it fits within screen height
     if (battlefieldHeight > screenHeight) {
       battlefieldHeight = screenHeight;
-      battlefieldWidth = (battlefieldHeight * 6) / 4;
+      battlefieldWidth = screenHeight * battlefieldAspectRatio;
     }
 
-    // Calculate minScale to prevent empty space on sides
+    // Calculate minScale to ensure the battlefield always fits the width or height
     double minScale = screenWidth / battlefieldWidth;
 
     return Scaffold(
       appBar: AppBar(title: Text("Battlefield")),
-      body: Center(
-        child: InteractiveViewer(
-          boundaryMargin: EdgeInsets.all(
-              double.infinity), // Allow image to move beyond edges
-          minScale: minScale, // Ensures battlefield fills width at minimum zoom
-          maxScale: 3.0, // Allow zooming in
-          child: SizedBox(
-            width: battlefieldWidth,
-            height: battlefieldHeight,
+      body: InteractiveViewer(
+        boundaryMargin:
+            EdgeInsets.all(double.infinity), // Allow movement beyond edges
+        minScale: minScale,
+        maxScale: 3.0,
+        child: Center(
+          child: AspectRatio(
+            aspectRatio: battlefieldAspectRatio,
             child: Stack(
               children: [
-                // Battlefield Image (Bottom Layer)
+                // Battlefield Image
                 Positioned.fill(
                   child: Image.asset(
-                    'assets/images/battlefield.jpg', // Ensure this image is added to assets
+                    'assets/images/battlefield.jpg',
                     fit: BoxFit.cover,
                   ),
                 ),
 
                 // Overlaying Rectangle (Scaled to battlefield)
                 Positioned(
-                  left: battlefieldWidth * 0.2, // Adjust position
+                  left: battlefieldWidth * 0.2,
                   top: battlefieldHeight * 0.2,
                   child: Container(
                     width: battlefieldWidth *
