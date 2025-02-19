@@ -27,13 +27,13 @@ class MainMenuScreen extends StatelessWidget {
       body: ResponsiveScreen(
         squarishMainArea: Center(
           child: Transform.rotate(
-            angle: -0.1,
+            angle: -0.2,
             child: const Text(
-              'Drag&Drop Cards!',
+              'Prepare for War!',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontFamily: 'Permanent Marker',
-                fontSize: 55,
+                fontSize: 65,
                 height: 1,
               ),
             ),
@@ -42,6 +42,14 @@ class MainMenuScreen extends StatelessWidget {
         rectangularMenuArea: Column(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
+            MyButton(
+              onPressed: () {
+                audioController.playSfx(SfxType.buttonTap);
+                GoRouter.of(context).go('/battlefield');
+              },
+              child: const Text('Battle Field'),
+            ),
+            _gap,
             MyButton(
               onPressed: () {
                 audioController.playSfx(SfxType.buttonTap);
