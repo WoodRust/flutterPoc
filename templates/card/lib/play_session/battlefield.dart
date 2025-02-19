@@ -31,13 +31,17 @@ class _BattlefieldScreenState extends State<BattlefieldScreen> {
 
     // Define boundary margin to restrict panning horizontally (10% of screen width)
     double horizontalBoundaryMargin = screenWidth * 0.05; // 5% from each side
+    double verticalBoundaryMargin =
+        screenHeight * 0.05; // No restriction on vertical panning
 
     return Scaffold(
       appBar: AppBar(title: Text("Battlefield")),
       body: InteractiveViewer(
-        boundaryMargin: EdgeInsets.symmetric(
-          horizontal: horizontalBoundaryMargin, // Limit horizontal panning
-          vertical: double.infinity, // Allow full vertical panning
+        boundaryMargin: EdgeInsets.only(
+          left: horizontalBoundaryMargin,
+          right: horizontalBoundaryMargin,
+          top: verticalBoundaryMargin,
+          bottom: verticalBoundaryMargin,
         ),
         minScale: minScale, // Minimum scale based on the width
         maxScale: 3.0, // Max zoom in
