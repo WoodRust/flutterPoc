@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:card/play_session/battlefield.dart';
+import 'package:card/play_session/simple_battlefield.dart';
 import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -23,6 +24,11 @@ final router = GoRouter(
       path: '/',
       builder: (context, state) => const MainMenuScreen(key: Key('main menu')),
       routes: [
+        GoRoute(
+          path: 'simplebattlefield',
+          builder: (context, state) =>
+              const SimpleBattlefieldScreen(key: Key('simplebattlefield')),
+        ),
         GoRoute(
           path: 'battlefield',
           builder: (context, state) =>

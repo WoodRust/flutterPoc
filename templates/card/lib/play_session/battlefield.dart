@@ -29,20 +29,9 @@ class _BattlefieldScreenState extends State<BattlefieldScreen> {
     // Calculate minScale to ensure the battlefield always fits the width or height
     double minScale = screenWidth / battlefieldWidth;
 
-    // Define boundary margin to restrict panning horizontally (10% of screen width)
-    double horizontalBoundaryMargin = screenWidth * 0.05; // 5% from each side
-    double verticalBoundaryMargin =
-        screenHeight * 0.05; // No restriction on vertical panning
-
     return Scaffold(
       appBar: AppBar(title: Text("Battlefield")),
       body: InteractiveViewer(
-        boundaryMargin: EdgeInsets.only(
-          left: horizontalBoundaryMargin,
-          right: horizontalBoundaryMargin,
-          top: verticalBoundaryMargin,
-          bottom: verticalBoundaryMargin,
-        ),
         minScale: minScale, // Minimum scale based on the width
         maxScale: 3.0, // Max zoom in
         child: Center(
@@ -59,17 +48,17 @@ class _BattlefieldScreenState extends State<BattlefieldScreen> {
                 ),
 
                 // Overlaying Rectangle (Scaled to battlefield)
-                Positioned(
-                  left: battlefieldWidth * 0.2,
-                  top: battlefieldHeight * 0.2,
-                  child: Container(
-                    width: battlefieldWidth *
-                        (8.5 / 72), // Scaled to 6ft battlefield
-                    height: battlefieldHeight *
-                        (2.5 / 48), // Scaled to 4ft battlefield
-                    color: Colors.red.withOpacity(0.5),
-                  ),
-                ),
+                // Positioned(
+                //   left: battlefieldWidth * 0.2,
+                //   top: battlefieldHeight * 0.2,
+                //   child: Container(
+                //     width: battlefieldWidth *
+                //         (8.5 / 72), // Scaled to 6ft battlefield
+                //     height: battlefieldHeight *
+                //         (2.5 / 48), // Scaled to 4ft battlefield
+                //     color: Colors.red.withOpacity(0.5),
+                //   ),
+                // ),
               ],
             ),
           ),
