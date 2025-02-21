@@ -4,6 +4,7 @@
 
 import 'package:card/play_session/battlefield.dart';
 import 'package:card/play_session/simple_battlefield.dart';
+import 'package:card/play_session/wave_screen.dart';
 import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -24,6 +25,10 @@ final router = GoRouter(
       path: '/',
       builder: (context, state) => const MainMenuScreen(key: Key('main menu')),
       routes: [
+        GoRoute(
+          path: 'waveslider',
+          builder: (context, state) => const WaveScreen(key: Key('waveslider')),
+        ),
         GoRoute(
           path: 'simplebattlefield',
           builder: (context, state) =>
