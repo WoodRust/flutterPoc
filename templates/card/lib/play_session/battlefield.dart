@@ -34,6 +34,7 @@ class _BattlefieldScreenState extends State<BattlefieldScreen> {
       body: InteractiveViewer(
         minScale: minScale, // Minimum scale based on the width
         maxScale: 3.0, // Max zoom in
+        panAxis: PanAxis.horizontal,
         child: Center(
           child: AspectRatio(
             aspectRatio: battlefieldAspectRatio,
@@ -47,18 +48,18 @@ class _BattlefieldScreenState extends State<BattlefieldScreen> {
                   ),
                 ),
 
-                // Overlaying Rectangle (Scaled to battlefield)
-                // Positioned(
-                //   left: battlefieldWidth * 0.2,
-                //   top: battlefieldHeight * 0.2,
-                //   child: Container(
-                //     width: battlefieldWidth *
-                //         (8.5 / 72), // Scaled to 6ft battlefield
-                //     height: battlefieldHeight *
-                //         (2.5 / 48), // Scaled to 4ft battlefield
-                //     color: Colors.red.withOpacity(0.5),
-                //   ),
-                // ),
+                //Overlaying Rectangle (Scaled to battlefield)
+                Positioned(
+                  left: battlefieldWidth * 0.2,
+                  top: battlefieldHeight * 0.2,
+                  child: Container(
+                    width: battlefieldWidth *
+                        (8.5 / 72), // Scaled to 6ft battlefield
+                    height: battlefieldHeight *
+                        (2.5 / 48), // Scaled to 4ft battlefield
+                    color: Colors.red.withOpacity(0.5),
+                  ),
+                ),
               ],
             ),
           ),
