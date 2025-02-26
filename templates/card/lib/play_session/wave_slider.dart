@@ -6,8 +6,14 @@ class WaveSlider extends StatefulWidget {
   final double height;
   final Color color;
 
+  final ValueChanged<double> onChanged;
+
   const WaveSlider(
-      {this.width = 350.0, this.height = 50.0, this.color = Colors.black});
+      {this.width = 350.0,
+      this.height = 50.0,
+      this.color = Colors.black,
+      required this.onChanged})
+      : assert(height >= 50 && height <= 600);
 
   @override
   State<WaveSlider> createState() => _WaveSliderState();
@@ -33,11 +39,17 @@ class _WaveSliderState extends State<WaveSlider> {
     });
   }
 
+  void _handleChangeStart(double value) {
+    assert(widget.onChanged != null);
+    widget.onChanged(value);
+  }
+
   void _onDragUpdate(BuildContext context, DragUpdateDetails update) {
     RenderBox? box = context.findRenderObject() as RenderBox?;
     if (box != null) {
       Offset offset = box.globalToLocal(update.globalPosition);
       _updateDragPosition(offset);
+      _handleChangeStart(_dragPercentage);
     }
   }
 

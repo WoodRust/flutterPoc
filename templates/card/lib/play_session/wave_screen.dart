@@ -1,3 +1,4 @@
+import 'package:card/play_session/target_selector.dart';
 import 'package:card/play_session/wave_slider.dart';
 import 'package:flutter/material.dart';
 
@@ -20,6 +21,34 @@ class _WaveScreenState extends State<WaveScreen> {
                 child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: <Widget>[
+                  Row(children: [
+                    Text(
+                      'Target',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontFamily: 'Permanent Marker',
+                      ),
+                    ),
+                    _gap,
+                    TargetSelector(
+                      selectionLimit: 6,
+                      initialvalue: 3,
+                    ),
+                  ]),
+                  Row(children: [
+                    Text(
+                      'Attacks',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontFamily: 'Permanent Marker',
+                      ),
+                    ),
+                    _gap,
+                    TargetSelector(
+                      selectionLimit: 30,
+                      initialvalue: 13,
+                    ),
+                  ]),
                   Text(
                     'Hits',
                     style: TextStyle(
@@ -27,12 +56,19 @@ class _WaveScreenState extends State<WaveScreen> {
                       fontFamily: 'Permanent Marker',
                     ),
                   ),
-                  WaveSlider(),
+                  WaveSlider(
+                    onChanged: (double value) {
+                      setState(() {
+                        _hits = (value * 100).round();
+                      });
+                    },
+                  ),
                   SizedBox(
                     height: 50.0,
                   ),
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.baseline,
+                    mainAxisAlignment: MainAxisAlignment.end,
                     textBaseline: TextBaseline.alphabetic,
                     children: <Widget>[
                       Text(
@@ -50,4 +86,6 @@ class _WaveScreenState extends State<WaveScreen> {
                   )
                 ]))));
   }
+
+  static const _gap = SizedBox(width: 20);
 }
