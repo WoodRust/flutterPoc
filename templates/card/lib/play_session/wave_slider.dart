@@ -5,15 +5,16 @@ class WaveSlider extends StatefulWidget {
   final double width;
   final double height;
   final Color color;
-
   final ValueChanged<double> onChanged;
+  final double dragPercentage; // New parameter for external updates
 
-  const WaveSlider(
-      {this.width = 350.0,
-      this.height = 50.0,
-      this.color = Colors.black,
-      required this.onChanged})
-      : assert(height >= 50 && height <= 600);
+  const WaveSlider({
+    this.width = 350.0,
+    this.height = 50.0,
+    this.color = Colors.black,
+    required this.onChanged,
+    this.dragPercentage = 0.0, // Required percentage
+  }) : assert(height >= 50 && height <= 600);
 
   @override
   State<WaveSlider> createState() => _WaveSliderState();
@@ -23,55 +24,40 @@ class _WaveSliderState extends State<WaveSlider> {
   double _dragPosition = 0;
   double _dragPercentage = 0;
 
-  void _updateDragPosition(Offset val) {
-    double newDragPosition = 0;
-
-    if (val.dx <= 0) {
-      newDragPosition = 0;
-    } else if (val.dx >= widget.width) {
-      newDragPosition = widget.width;
-    } else {
-      newDragPosition = val.dx;
+  @override
+  void didUpdateWidget(covariant WaveSlider oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.dragPercentage != oldWidget.dragPercentage) {
+      setState(() {
+        _dragPercentage = widget.dragPercentage;
+        _dragPosition =
+            _dragPercentage * widget.width; // Convert percentage to position
+      });
     }
+  }
+
+  void _updateDragPosition(Offset val) {
+    double newDragPosition = val.dx.clamp(0, widget.width);
     setState(() {
       _dragPosition = newDragPosition;
       _dragPercentage = _dragPosition / widget.width;
     });
-  }
-
-  void _handleChangeStart(double value) {
-    assert(widget.onChanged != null);
-    widget.onChanged(value);
-  }
-
-  void _onDragUpdate(BuildContext context, DragUpdateDetails update) {
-    RenderBox? box = context.findRenderObject() as RenderBox?;
-    if (box != null) {
-      Offset offset = box.globalToLocal(update.globalPosition);
-      _updateDragPosition(offset);
-      _handleChangeStart(_dragPercentage);
-    }
-  }
-
-  void _onDragStart(BuildContext context, DragStartDetails start) {
-    RenderBox? box = context.findRenderObject() as RenderBox?;
-    if (box != null) {
-      Offset offset = box.globalToLocal(start.globalPosition);
-      _updateDragPosition(offset);
-    }
-  }
-
-  void _onDragEnd(BuildContext context, DragEndDetails end) {
-    setState(() {});
+    widget.onChanged(_dragPercentage);
   }
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
+      onHorizontalDragUpdate: (DragUpdateDetails update) {
+        RenderBox? box = context.findRenderObject() as RenderBox?;
+        if (box != null) {
+          Offset offset = box.globalToLocal(update.globalPosition);
+          _updateDragPosition(offset);
+        }
+      },
       child: Container(
         width: widget.width,
         height: widget.height,
-        //color: Colors.red, - uncommenting this will paint the geture area.
         child: CustomPaint(
           painter: WavePainter(
             sliderPosition: _dragPosition,
@@ -80,11 +66,6 @@ class _WaveSliderState extends State<WaveSlider> {
           ),
         ),
       ),
-      onHorizontalDragUpdate: (DragUpdateDetails update) =>
-          _onDragUpdate(context, update),
-      onHorizontalDragStart: (DragStartDetails start) =>
-          _onDragStart(context, start),
-      onHorizontalDragEnd: (DragEndDetails end) => _onDragEnd(context, end),
     );
   }
 }

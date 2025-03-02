@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'target_selector.dart'; // Ensure this matches your file structure
 
 class DiceRoller extends StatefulWidget {
-  const DiceRoller({super.key});
+  final void Function(int result, int numDice) onResult; // Callback function
+
+  const DiceRoller({super.key, required this.onResult});
 
   @override
   State<DiceRoller> createState() => _DiceRollerState();
@@ -12,14 +14,13 @@ class DiceRoller extends StatefulWidget {
 class _DiceRollerState extends State<DiceRoller> {
   final Random _random = Random();
   int _result = 0;
-  int numDice = 1; // Default to 1 dice
-  int target = 6; // Default target number is 6
+  int numDice = 1;
+  int target = 6;
 
-  /// Rolls the given number of dice and counts successes (<= target number).
   int rollDice(int numDice, int target) {
     int count = 0;
     for (int i = 0; i < numDice; i++) {
-      int roll = _random.nextInt(6) + 1; // Rolls between 1 and 6
+      int roll = _random.nextInt(6) + 1;
       if (roll <= target) count++;
     }
     return count;
@@ -29,6 +30,7 @@ class _DiceRollerState extends State<DiceRoller> {
     setState(() {
       _result = rollDice(numDice, target);
     });
+    widget.onResult(_result, numDice); // Pass values to WaveScreen
   }
 
   @override
@@ -37,35 +39,34 @@ class _DiceRollerState extends State<DiceRoller> {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Row(children: [
-          Text('# Dice:', style: const TextStyle(fontSize: 20)),
-          _gap,
-          _gap,
+          Text('# Dice:', style: TextStyle(fontSize: 20)),
           TargetSelector(
-            selectionLimit: 30, // Example: Allow up to 10 dice
+            selectionLimit: 30,
             initialValue: numDice,
-            onChanged: (value) => setState(() => numDice = value),
+            onChanged: (value) => setState(() {
+              numDice = value;
+            }),
           ),
         ]),
-        const SizedBox(height: 10),
+        SizedBox(height: 10),
         Row(children: [
-          Text('# Target:', style: const TextStyle(fontSize: 20)),
-          _gap,
+          Text('# Target:', style: TextStyle(fontSize: 20)),
           TargetSelector(
-            selectionLimit: 6, // Target numbers range from 1 to 6
+            selectionLimit: 6,
             initialValue: target,
-            onChanged: (value) => setState(() => target = value),
+            onChanged: (value) => setState(() {
+              target = value;
+            }),
           ),
         ]),
-        const SizedBox(height: 20),
+        SizedBox(height: 20),
         OutlinedButton(
           onPressed: _onPressed,
-          child: const Text('Roll Dice'),
+          child: Text('Roll Dice'),
         ),
-        const SizedBox(height: 20),
-        Text('Successes: $_result', style: const TextStyle(fontSize: 20)),
+        SizedBox(height: 20),
+        Text('Successes: $_result', style: TextStyle(fontSize: 20)),
       ],
     );
   }
-
-  static const _gap = SizedBox(width: 20);
 }
