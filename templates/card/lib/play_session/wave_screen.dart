@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:async';
-import 'package:flutter/animation.dart';
 import 'd6_Dice_Roller.dart';
 import 'wave_slider.dart';
 
@@ -13,11 +11,8 @@ class WaveScreen extends StatefulWidget {
 
 class _WaveScreenState extends State<WaveScreen>
     with SingleTickerProviderStateMixin {
-  int _result = 0;
-  int _numDice = 1;
   double _dragPercentage = 0.0;
   late AnimationController _controller;
-  late Animation<double> _animation;
 
   @override
   void initState() {
@@ -63,10 +58,7 @@ class _WaveScreenState extends State<WaveScreen>
   }
 
   void _updateResults(int result, int numDice) {
-    setState(() {
-      _result = result;
-      _numDice = numDice;
-    });
+    setState(() {});
     double successRate = numDice > 0 ? result / numDice : 0;
     _animateWave(successRate);
   }
