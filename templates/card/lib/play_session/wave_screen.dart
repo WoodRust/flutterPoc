@@ -1,7 +1,8 @@
-import 'package:card/play_session/d6_Dice_Roller.dart';
-import 'package:card/play_session/target_selector.dart';
-import 'package:card/play_session/wave_slider.dart';
 import 'package:flutter/material.dart';
+import 'dart:async';
+import 'package:flutter/animation.dart';
+import 'd6_Dice_Roller.dart';
+import 'wave_slider.dart';
 
 class WaveScreen extends StatefulWidget {
   const WaveScreen({super.key});
@@ -10,17 +11,70 @@ class WaveScreen extends StatefulWidget {
   State<WaveScreen> createState() => _WaveScreenState();
 }
 
-class _WaveScreenState extends State<WaveScreen> {
+class _WaveScreenState extends State<WaveScreen>
+    with SingleTickerProviderStateMixin {
   int _result = 0;
   int _numDice = 1;
   double _dragPercentage = 0.0;
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: Duration(milliseconds: 1500),
+    );
+  }
+
+  void _animateWave(double successRate) {
+    _controller.reset();
+
+    final up1 = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(
+          parent: _controller,
+          curve: Interval(0.0, 0.33, curve: Curves.easeInOut)),
+    );
+    final down = Tween<double>(begin: 1, end: 0).animate(
+      CurvedAnimation(
+          parent: _controller,
+          curve: Interval(0.33, 0.66, curve: Curves.easeInOut)),
+    );
+    final up2 = Tween<double>(begin: 0, end: successRate).animate(
+      CurvedAnimation(
+          parent: _controller,
+          curve: Interval(0.66, 1.0, curve: Curves.easeInOut)),
+    );
+
+    _controller.addListener(() {
+      setState(() {
+        if (_controller.value <= 0.33) {
+          _dragPercentage = up1.value;
+        } else if (_controller.value <= 0.66) {
+          _dragPercentage = down.value;
+        } else {
+          _dragPercentage = up2.value;
+        }
+      });
+    });
+
+    _controller.forward();
+  }
 
   void _updateResults(int result, int numDice) {
     setState(() {
       _result = result;
       _numDice = numDice;
-      _dragPercentage = numDice > 0 ? result / numDice : 0; // Update percentage
     });
+    double successRate = numDice > 0 ? result / numDice : 0;
+    _animateWave(successRate);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 
   @override
@@ -33,17 +87,15 @@ class _WaveScreenState extends State<WaveScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
               DiceRoller(
-                onResult: _updateResults, // Update success rate
+                onResult: _updateResults,
               ),
               Text(
                 'Success Rate',
                 style: TextStyle(fontSize: 45, fontFamily: 'Permanent Marker'),
               ),
               WaveSlider(
-                dragPercentage: _dragPercentage, // Pass percentage to slider
-                onChanged: (double value) {
-                  // No manual update needed
-                },
+                dragPercentage: _dragPercentage,
+                onChanged: (double value) {},
               ),
               SizedBox(height: 50.0),
               Row(
@@ -52,7 +104,7 @@ class _WaveScreenState extends State<WaveScreen> {
                 textBaseline: TextBaseline.alphabetic,
                 children: <Widget>[
                   Text(
-                    '${(_dragPercentage * 100).round()}%', // Display correct percentage
+                    '${(_dragPercentage * 100).round()}%',
                     style: TextStyle(fontSize: 45),
                   ),
                   SizedBox(width: 15),
