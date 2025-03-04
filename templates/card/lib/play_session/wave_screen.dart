@@ -13,6 +13,8 @@ class _WaveScreenState extends State<WaveScreen>
     with SingleTickerProviderStateMixin {
   double _dragPercentage = 0.0;
   double _expectedSuccessPercentage = 0.0;
+  int numDice = 1;
+  double expectedSuccesses = 0.0;
   late AnimationController _controller;
 
   @override
@@ -60,6 +62,8 @@ class _WaveScreenState extends State<WaveScreen>
 
   void _updateResults(int result, int numDice, double expectedSuccesses) {
     setState(() {
+      this.numDice = numDice; // Store the number of dice
+      this.expectedSuccesses = expectedSuccesses; // Store expected successes
       _expectedSuccessPercentage =
           numDice > 0 ? expectedSuccesses / numDice : 0;
     });
@@ -92,25 +96,27 @@ class _WaveScreenState extends State<WaveScreen>
               WaveSlider(
                 dragPercentage: _dragPercentage,
                 expectedSuccessPercentage: _expectedSuccessPercentage,
+                numDice: numDice, // Add this from DiceRoller state
+                expectedSuccesses:
+                    expectedSuccesses, // Add this from DiceRoller state
                 onChanged: (double value) {},
               ),
               SizedBox(height: 50.0),
               Row(
-                crossAxisAlignment: CrossAxisAlignment.baseline,
-                mainAxisAlignment: MainAxisAlignment.end,
-                textBaseline: TextBaseline.alphabetic,
-                children: <Widget>[
-                  Text(
-                    '${(_dragPercentage * 100).round()}%',
-                    style: TextStyle(fontSize: 45),
-                  ),
-                  SizedBox(width: 15),
-                  Text(
-                    'Success Rate',
-                    style: TextStyle(fontSize: 20, fontFamily: 'TextMeOne'),
-                  )
-                ],
-              )
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  textBaseline: TextBaseline.alphabetic,
+                  children: <Widget>[
+                    Text(
+                      '${(_dragPercentage * 100).round()}%',
+                      style: TextStyle(fontSize: 45),
+                    ),
+                    SizedBox(width: 15),
+                    Text(
+                      'Success Rate',
+                      style: TextStyle(fontSize: 20, fontFamily: 'TextMeOne'),
+                    )
+                  ])
             ],
           ),
         ),

@@ -5,31 +5,32 @@ import 'package:flutter/material.dart';
 class WavePainter extends CustomPainter {
   final double sliderPosition;
   final double dragPercentage;
-  final double
-      expectedSuccessPercentage; // Expected success as percentage (0 to 1)
+  final double expectedSuccessPercentage;
+  final int numDice; // New parameter for number of dice
+  final double expectedSuccesses; // New parameter for expected successes
 
   final Color badColor = Color(0xFFFF4136); // Red
   final Color neutralColor = Color(0xFFFFDC00); // Yellow
   final Color goodColor = Color(0xFF2ECC40); // Green
 
   final Paint fillPainter;
-  final Paint expectedLinePainter; // Paint for the blue expected success line
-
-  late Paint wavePainter; // Paint for the wave, dynamically colored
+  final Paint expectedLinePainter;
+  late Paint wavePainter;
 
   double _previousSliderPosition = 0;
 
   WavePainter({
     required this.sliderPosition,
     required this.dragPercentage,
-    required this.expectedSuccessPercentage, // Expected success percentage
+    required this.expectedSuccessPercentage,
+    this.numDice = 1, // Default to 1 if not provided
+    this.expectedSuccesses = 0, // Default to 0 if not provided
   })  : fillPainter = Paint()
           ..color = Colors.black
           ..style = PaintingStyle.fill,
         expectedLinePainter = Paint()
           ..color = Colors.blue
           ..strokeWidth = 3.0 {
-    // Compute dynamic wave color
     wavePainter = Paint()
       ..color = _calculateWaveColor(dragPercentage, expectedSuccessPercentage)
       ..style = PaintingStyle.stroke
@@ -38,7 +39,7 @@ class WavePainter extends CustomPainter {
 
   /// Computes the color of the wave based on the drag percentage.
   Color _calculateWaveColor(double dragPercentage, double expectedPercentage) {
-    const double biasFactor = 0.8; // 70% of the transition range
+    const double biasFactor = 0.4; // 70% of the transition range
 
     if (dragPercentage < expectedPercentage) {
       // Interpolate Red to Yellow with 70% bias
@@ -58,7 +59,48 @@ class WavePainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     _paintAnchors(canvas, size);
     _paintWaveLine(canvas, size);
-    _paintExpectedSuccessLine(canvas, size); // Draw expected success line
+    _paintExpectedSuccessLine(canvas, size);
+    _paintAnnotations(canvas, size);
+  }
+
+  void _paintAnnotations(Canvas canvas, Size size) {
+    final textPainter = TextPainter(
+      textAlign: TextAlign.left,
+      textDirection: TextDirection.ltr,
+    );
+
+    // Annotate number of dice to the right of the right anchor point
+    textPainter.text = TextSpan(
+      text: '$numDice',
+      style: TextStyle(
+        color: Colors.black,
+        fontSize: 14,
+      ),
+    );
+    textPainter.layout();
+    textPainter.paint(
+        canvas,
+        Offset(
+            size.width + 10,
+            size.height -
+                (textPainter.height / 2)) // Vertically centered with anchor
+        );
+
+    // Annotate expected successes under the blue line
+    double xPosition = expectedSuccessPercentage * size.width;
+    textPainter.text = TextSpan(
+      text: expectedSuccesses.toStringAsFixed(1),
+      style: TextStyle(
+        color: Colors.black,
+        fontSize: 14,
+      ),
+    );
+    textPainter.layout(maxWidth: 100);
+
+    // Center the text under the line
+    double centeredXOffset = xPosition - (textPainter.width / 2);
+
+    textPainter.paint(canvas, Offset(centeredXOffset, size.height + 10));
   }
 
   void _paintAnchors(Canvas canvas, Size size) {
