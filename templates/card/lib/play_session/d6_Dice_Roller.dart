@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import 'target_selector.dart'; // Ensure this matches your file structure
 
 class DiceRoller extends StatefulWidget {
-  final void Function(int result, int numDice) onResult; // Callback function
+  final void Function(int result, int numDice, double expectedSuccesses)
+      onResult; // Callback function
 
   const DiceRoller({super.key, required this.onResult});
 
@@ -26,15 +27,22 @@ class _DiceRollerState extends State<DiceRoller> {
     return count;
   }
 
+  double calculateExpectedSuccesses(int numDice, int target) {
+    return numDice * (target / 6);
+  }
+
   void _onPressed() {
     setState(() {
       _result = rollDice(numDice, target);
     });
-    widget.onResult(_result, numDice); // Pass values to WaveScreen
+    double expectedSuccesses = calculateExpectedSuccesses(numDice, target);
+    widget.onResult(_result, numDice, expectedSuccesses);
   }
 
   @override
   Widget build(BuildContext context) {
+    double expectedSuccesses = calculateExpectedSuccesses(numDice, target);
+
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -66,6 +74,10 @@ class _DiceRollerState extends State<DiceRoller> {
         ),
         SizedBox(height: 20),
         Text('Successes: $_result', style: TextStyle(fontSize: 20)),
+        Text(
+          'Expected Successes: ${expectedSuccesses.toStringAsFixed(1)}',
+          style: TextStyle(fontSize: 16, color: Colors.grey),
+        ),
       ],
     );
   }

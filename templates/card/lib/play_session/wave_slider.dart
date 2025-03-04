@@ -6,14 +6,16 @@ class WaveSlider extends StatefulWidget {
   final double height;
   final Color color;
   final ValueChanged<double> onChanged;
-  final double dragPercentage; // New parameter for external updates
+  final double dragPercentage;
+  final double expectedSuccessPercentage; // New parameter
 
   const WaveSlider({
     this.width = 350.0,
     this.height = 50.0,
     this.color = Colors.black,
     required this.onChanged,
-    this.dragPercentage = 0.0, // Required percentage
+    this.dragPercentage = 0.0,
+    this.expectedSuccessPercentage = 0.0, // Default to 0
   }) : assert(height >= 50 && height <= 600);
 
   @override
@@ -30,8 +32,7 @@ class _WaveSliderState extends State<WaveSlider> {
     if (widget.dragPercentage != oldWidget.dragPercentage) {
       setState(() {
         _dragPercentage = widget.dragPercentage;
-        _dragPosition =
-            _dragPercentage * widget.width; // Convert percentage to position
+        _dragPosition = _dragPercentage * widget.width;
       });
     }
   }
@@ -62,7 +63,9 @@ class _WaveSliderState extends State<WaveSlider> {
           painter: WavePainter(
             sliderPosition: _dragPosition,
             dragPercentage: _dragPercentage,
-            color: widget.color,
+            //color: widget.color,
+            expectedSuccessPercentage: widget
+                .expectedSuccessPercentage, // Pass expected success percentage
           ),
         ),
       ),

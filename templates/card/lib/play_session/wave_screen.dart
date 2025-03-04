@@ -12,6 +12,7 @@ class WaveScreen extends StatefulWidget {
 class _WaveScreenState extends State<WaveScreen>
     with SingleTickerProviderStateMixin {
   double _dragPercentage = 0.0;
+  double _expectedSuccessPercentage = 0.0;
   late AnimationController _controller;
 
   @override
@@ -57,10 +58,13 @@ class _WaveScreenState extends State<WaveScreen>
     _controller.forward();
   }
 
-  void _updateResults(int result, int numDice) {
-    setState(() {});
-    double successRate = numDice > 0 ? result / numDice : 0;
-    _animateWave(successRate);
+  void _updateResults(int result, int numDice, double expectedSuccesses) {
+    setState(() {
+      _expectedSuccessPercentage =
+          numDice > 0 ? expectedSuccesses / numDice : 0;
+    });
+    double successPercentage = numDice > 0 ? result / numDice : 0;
+    _animateWave(successPercentage);
   }
 
   @override
@@ -87,6 +91,7 @@ class _WaveScreenState extends State<WaveScreen>
               ),
               WaveSlider(
                 dragPercentage: _dragPercentage,
+                expectedSuccessPercentage: _expectedSuccessPercentage,
                 onChanged: (double value) {},
               ),
               SizedBox(height: 50.0),
