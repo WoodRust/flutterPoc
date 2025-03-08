@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'wave_painter.dart'; // Ensure this path is correct
+import 'wave_painter.dart';
 
 class WaveSlider extends StatefulWidget {
   final double width;
@@ -8,8 +8,8 @@ class WaveSlider extends StatefulWidget {
   final ValueChanged<double> onChanged;
   final double dragPercentage;
   final double expectedSuccessPercentage;
-  final int numDice; // New parameter
-  final double expectedSuccesses; // New parameter
+  final int numDice;
+  final double expectedSuccesses;
 
   const WaveSlider({
     this.width = 350.0,
@@ -18,8 +18,8 @@ class WaveSlider extends StatefulWidget {
     required this.onChanged,
     this.dragPercentage = 0.0,
     this.expectedSuccessPercentage = 0.0,
-    this.numDice = 1, // Default to 1
-    this.expectedSuccesses = 0, // Default to 0
+    this.numDice = 1,
+    this.expectedSuccesses = 0,
   }) : assert(height >= 50 && height <= 600);
 
   @override
@@ -68,9 +68,8 @@ class _WaveSliderState extends State<WaveSlider> {
             sliderPosition: _dragPosition,
             dragPercentage: _dragPercentage,
             expectedSuccessPercentage: widget.expectedSuccessPercentage,
-            numDice: widget.numDice, // Pass the number of dice
-            expectedSuccesses:
-                widget.expectedSuccesses, // Pass expected successes
+            numDice: widget.numDice,
+            expectedSuccesses: widget.expectedSuccesses,
           ),
         ),
       ),

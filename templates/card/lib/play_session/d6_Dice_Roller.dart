@@ -1,12 +1,17 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
-import 'target_selector.dart'; // Ensure this matches your file structure
+import 'target_selector.dart';
 
 class DiceRoller extends StatefulWidget {
   final void Function(int result, int numDice, double expectedSuccesses)
-      onResult; // Callback function
+      onResult;
+  final bool hideResults; // New parameter to control visibility of results
 
-  const DiceRoller({super.key, required this.onResult});
+  const DiceRoller({
+    super.key,
+    required this.onResult,
+    this.hideResults = false,
+  });
 
   @override
   State<DiceRoller> createState() => _DiceRollerState();
@@ -72,12 +77,15 @@ class _DiceRollerState extends State<DiceRoller> {
           onPressed: _onPressed,
           child: Text('Roll Dice'),
         ),
-        SizedBox(height: 20),
-        Text('Successes: $_result', style: TextStyle(fontSize: 20)),
-        Text(
-          'Expected Successes: ${expectedSuccesses.toStringAsFixed(1)}',
-          style: TextStyle(fontSize: 16, color: Colors.grey),
-        ),
+        // Display results only if hideResults is false
+        if (!widget.hideResults) ...[
+          SizedBox(height: 20),
+          Text('Successes: $_result', style: TextStyle(fontSize: 20)),
+          Text(
+            'Expected Successes: ${expectedSuccesses.toStringAsFixed(1)}',
+            style: TextStyle(fontSize: 16, color: Colors.grey),
+          ),
+        ],
       ],
     );
   }
