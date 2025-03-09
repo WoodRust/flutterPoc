@@ -1,8 +1,9 @@
-import 'package:card/play_session/target_selector.dart';
 import 'package:flutter/material.dart';
+import 'dart:math';
+import 'dart:async';
 import 'd6_Dice_Roller.dart';
 import 'wave_slider.dart';
-import 'dart:math';
+import 'target_selector.dart';
 
 class WaveScreen extends StatefulWidget {
   const WaveScreen({super.key});
@@ -12,14 +13,16 @@ class WaveScreen extends StatefulWidget {
 }
 
 class _WaveScreenState extends State<WaveScreen> with TickerProviderStateMixin {
-  // First wave slider state
+  // First wave slider state (Hits)
   double _dragPercentage = 0.0;
   double _expectedSuccessPercentage = 0.0;
   int numDice = 1;
   double expectedSuccesses = 0.0;
   int _firstSliderPosition = 0;
+  int firstResult = 0;
+  bool firstAnimationStarted = false;
 
-  // Second wave slider state
+  // Second wave slider state (Defence)
   double _secondDragPercentage = 0.0;
   double _secondExpectedSuccessPercentage = 0.0;
   int secondNumDice = 0; // Will be set from first roll's successes
@@ -27,25 +30,99 @@ class _WaveScreenState extends State<WaveScreen> with TickerProviderStateMixin {
   int secondTarget = 4; // Default second target value
   int secondResult = 0; // To store second roll result
   int _secondSliderPosition = 0;
+  bool secondAnimationStarted = false;
+
+  // Third wave slider state (Resolve)
+  double _thirdDragPercentage = 0.0;
+  double _thirdExpectedSuccessPercentage = 0.0;
+  int thirdNumDice = 0; // Will be set from second roll's fails
+  double thirdExpectedSuccesses = 0.0;
+  int thirdTarget = 4; // Default third target value
+  int thirdResult = 0; // To store third roll result
+  int _thirdSliderPosition = 0;
+  bool thirdAnimationStarted = false;
+
+  // Wounds counter
+  int totalWounds = 0;
 
   // Animation controllers
   late AnimationController _controller;
   late AnimationController _secondController;
+  late AnimationController _thirdController;
 
   @override
   void initState() {
     super.initState();
+
+    // Setup first animation controller with completion listener
     _controller = AnimationController(
       vsync: this,
       duration: Duration(milliseconds: 1500),
-    );
+    )..addStatusListener((status) {
+        if (status == AnimationStatus.completed) {
+          print("First animation completed"); // Debug
+          setState(() {
+            if (secondNumDice > 0) {
+              secondAnimationStarted = true;
+              // Start second animation with delay
+              Future.delayed(Duration(milliseconds: 300), () {
+                _startSecondAnimation();
+              });
+            }
+          });
+        }
+      });
 
+    // Setup second animation controller with completion listener
     _secondController = AnimationController(
       vsync: this,
       duration: Duration(milliseconds: 1500),
-    );
+    )..addStatusListener((status) {
+        if (status == AnimationStatus.completed) {
+          print("Second animation completed"); // Debug
+          setState(() {
+            if (thirdNumDice > 0) {
+              thirdAnimationStarted = true;
+              // Start third animation with delay
+              Future.delayed(Duration(milliseconds: 300), () {
+                _startThirdAnimation();
+              });
+            }
+          });
+        }
+      });
+
+    // Setup third animation controller
+    _thirdController = AnimationController(
+      vsync: this,
+      duration: Duration(milliseconds: 1500),
+    )..addStatusListener((status) {
+        if (status == AnimationStatus.completed) {
+          print("Third animation completed"); // Debug
+        }
+      });
   }
 
+  // Start the second animation
+  void _startSecondAnimation() {
+    print("Starting second animation"); // Debug
+    if (secondNumDice > 0 && secondAnimationStarted) {
+      double secondSuccessPercentage = secondResult / secondNumDice;
+      _animateWave(
+          secondSuccessPercentage, _secondController, _updateSecondWave);
+    }
+  }
+
+  // Start the third animation
+  void _startThirdAnimation() {
+    print("Starting third animation"); // Debug
+    if (thirdNumDice > 0 && thirdAnimationStarted) {
+      double thirdSuccessPercentage = thirdResult / thirdNumDice;
+      _animateWave(thirdSuccessPercentage, _thirdController, _updateThirdWave);
+    }
+  }
+
+  // Common animation function
   void _animateWave(double successRate, AnimationController controller,
       Function(double) updateState) {
     controller.reset();
@@ -81,55 +158,102 @@ class _WaveScreenState extends State<WaveScreen> with TickerProviderStateMixin {
     controller.forward();
   }
 
+  // Update functions for each wave
   void _updateFirstWave(double value) {
     _dragPercentage = value;
-    // Update the actual successes value based on the current animation state
     _firstSliderPosition = (numDice * _dragPercentage).round();
   }
 
   void _updateSecondWave(double value) {
     _secondDragPercentage = value;
-    // Update the actual successes value based on the current animation state
     _secondSliderPosition = (secondNumDice * _secondDragPercentage).round();
   }
 
-  void _updateResults(int result, int numDice, double expectedSuccesses) {
+  void _updateThirdWave(double value) {
+    _thirdDragPercentage = value;
+    _thirdSliderPosition = (thirdNumDice * _thirdDragPercentage).round();
+    _updateWoundsCounter();
+  }
+
+  // Update the total wounds count
+  void _updateWoundsCounter() {
+    int defenceFails = secondNumDice - _secondSliderPosition;
+    int resolveFails = thirdNumDice - _thirdSliderPosition;
+
     setState(() {
-      this.numDice = numDice; // Store the number of dice
-      this.expectedSuccesses = expectedSuccesses; // Store expected successes
+      totalWounds = defenceFails + resolveFails;
+    });
+  }
+
+  // Triggered when Roll Dice button is pressed
+  void _updateResults(int result, int numDice, double expectedSuccesses) {
+    print("Roll dice pressed. Result: $result, NumDice: $numDice"); // Debug
+
+    // Ensure all controllers are reset
+    _controller.reset();
+    _secondController.reset();
+    _thirdController.reset();
+
+    setState(() {
+      // Reset animation flags
+      firstAnimationStarted = true; // First animation starts immediately
+      secondAnimationStarted = false;
+      thirdAnimationStarted = false;
+
+      // Store first roll results
+      this.numDice = numDice;
+      this.expectedSuccesses = expectedSuccesses;
+      this.firstResult = result;
       _expectedSuccessPercentage =
           numDice > 0 ? expectedSuccesses / numDice : 0;
 
-      // Set the second dice number to the result of the first roll
+      // Set the second dice number to the result of the first roll (hits)
       secondNumDice = result;
 
-      // Calculate expected successes for second roll
+      // Calculate expected successes for second roll (Defence)
       secondExpectedSuccesses =
           calculateExpectedSuccesses(secondNumDice, secondTarget);
       _secondExpectedSuccessPercentage =
           secondNumDice > 0 ? secondExpectedSuccesses / secondNumDice : 0;
 
-      // Perform second dice roll
+      // Perform second dice roll (Defence)
       secondResult = rollDice(secondNumDice, secondTarget);
+
+      // Set the third dice number to the fails from the second roll
+      thirdNumDice = secondNumDice - secondResult;
+
+      // Calculate expected successes for third roll (Resolve)
+      thirdExpectedSuccesses =
+          calculateExpectedSuccesses(thirdNumDice, thirdTarget);
+      _thirdExpectedSuccessPercentage =
+          thirdNumDice > 0 ? thirdExpectedSuccesses / thirdNumDice : 0;
+
+      // Perform third dice roll (Resolve)
+      thirdResult = rollDice(thirdNumDice, thirdTarget);
+
+      // Reset the drag percentages
+      _dragPercentage = 0.0;
+      _secondDragPercentage = 0.0;
+      _thirdDragPercentage = 0.0;
+
+      // Reset positions
+      _firstSliderPosition = 0;
+      _secondSliderPosition = 0;
+      _thirdSliderPosition = 0;
+
+      // Update wounds counter
+      _updateWoundsCounter();
     });
 
-    // Animate first wave
+    // Start first animation
     double successPercentage = numDice > 0 ? result / numDice : 0;
     _animateWave(successPercentage, _controller, _updateFirstWave);
-
-    // Animate second wave
-    double secondSuccessPercentage =
-        secondNumDice > 0 ? secondResult / secondNumDice : 0;
-
-    // Slight delay for the second animation to create a cascade effect
-    Future.delayed(Duration(milliseconds: 300), () {
-      _animateWave(
-          secondSuccessPercentage, _secondController, _updateSecondWave);
-    });
   }
 
-  // Moved these functions from DiceRoller to be accessible here for the second roll
+  // Helper functions
   int rollDice(int numDice, int target) {
+    if (numDice <= 0) return 0;
+
     int count = 0;
     final random = Random();
     for (int i = 0; i < numDice; i++) {
@@ -143,7 +267,7 @@ class _WaveScreenState extends State<WaveScreen> with TickerProviderStateMixin {
     return numDice * (target / 6);
   }
 
-  // Update the second target value when changed
+  // Target selectors change handlers
   void _onSecondTargetChanged(int value) {
     setState(() {
       secondTarget = value;
@@ -151,6 +275,46 @@ class _WaveScreenState extends State<WaveScreen> with TickerProviderStateMixin {
           calculateExpectedSuccesses(secondNumDice, secondTarget);
       _secondExpectedSuccessPercentage =
           secondNumDice > 0 ? secondExpectedSuccesses / secondNumDice : 0;
+
+      // Recalculate the second roll with the new target
+      if (secondNumDice > 0) {
+        secondResult = rollDice(secondNumDice, secondTarget);
+
+        // Update third roll inputs based on new second roll results
+        thirdNumDice = secondNumDice - secondResult;
+        thirdExpectedSuccesses =
+            calculateExpectedSuccesses(thirdNumDice, thirdTarget);
+        _thirdExpectedSuccessPercentage =
+            thirdNumDice > 0 ? thirdExpectedSuccesses / thirdNumDice : 0;
+
+        // Recalculate the third roll
+        thirdResult = rollDice(thirdNumDice, thirdTarget);
+
+        // Reset and restart animations if needed
+        if (secondAnimationStarted) {
+          _startSecondAnimation();
+        }
+      }
+    });
+  }
+
+  void _onThirdTargetChanged(int value) {
+    setState(() {
+      thirdTarget = value;
+      thirdExpectedSuccesses =
+          calculateExpectedSuccesses(thirdNumDice, thirdTarget);
+      _thirdExpectedSuccessPercentage =
+          thirdNumDice > 0 ? thirdExpectedSuccesses / thirdNumDice : 0;
+
+      // Recalculate the third roll with the new target
+      if (thirdNumDice > 0) {
+        thirdResult = rollDice(thirdNumDice, thirdTarget);
+
+        // Restart animation if already started
+        if (thirdAnimationStarted) {
+          _startThirdAnimation();
+        }
+      }
     });
   }
 
@@ -158,6 +322,7 @@ class _WaveScreenState extends State<WaveScreen> with TickerProviderStateMixin {
   void dispose() {
     _controller.dispose();
     _secondController.dispose();
+    _thirdController.dispose();
     super.dispose();
   }
 
@@ -173,17 +338,17 @@ class _WaveScreenState extends State<WaveScreen> with TickerProviderStateMixin {
               // Primary dice roller
               DiceRoller(
                 onResult: _updateResults,
-                hideResults: true, // New parameter to hide results display
+                hideResults: true, // Hide results display
               ),
-              SizedBox(height: 20.0),
+              SizedBox(height: 30.0),
 
-              // First wave slider section
+              // First wave slider section (Hits)
               Text(
                 'Hits',
                 style: TextStyle(fontSize: 35, fontFamily: 'Permanent Marker'),
               ),
+              SizedBox(height: 10.0),
               Stack(
-                alignment: Alignment.center,
                 children: [
                   WaveSlider(
                     dragPercentage: _dragPercentage,
@@ -192,37 +357,45 @@ class _WaveScreenState extends State<WaveScreen> with TickerProviderStateMixin {
                     expectedSuccesses: expectedSuccesses,
                     onChanged: (double value) {},
                   ),
-                  Positioned(
-                    left: 350 *
-                        _dragPercentage, // Assuming width 350 from WaveSlider default
-                    child: Container(
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.7),
-                        borderRadius: BorderRadius.circular(15),
-                      ),
-                      child: Text(
-                        '$_firstSliderPosition',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
+                  // Show "X" before animation starts or if not started
+                  if (!firstAnimationStarted)
+                    Positioned(
+                      left: 165, // Center of slider (assuming 350px width)
+                      top: 15,
+                      child: Container(
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.5),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          'X',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ),
-                  ),
                 ],
               ),
 
               SizedBox(height: 40.0),
 
-              // Second roll target selector
+              // Second roll target selector (Defence)
               Row(
+                mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  Text('Defence Target:', style: TextStyle(fontSize: 20)),
+                  Padding(
+                    padding: EdgeInsets.only(right: 20),
+                    child:
+                        Text('Defence Target:', style: TextStyle(fontSize: 20)),
+                  ),
                   TargetSelector(
                     selectionLimit: 6,
                     initialValue: secondTarget,
+                    textSize: 20,
                     onChanged: _onSecondTargetChanged,
                   ),
                 ],
@@ -230,13 +403,13 @@ class _WaveScreenState extends State<WaveScreen> with TickerProviderStateMixin {
 
               SizedBox(height: 20.0),
 
-              // Second wave slider section
+              // Second wave slider section (Defence)
               Text(
                 'Defence',
                 style: TextStyle(fontSize: 35, fontFamily: 'Permanent Marker'),
               ),
+              SizedBox(height: 10.0),
               Stack(
-                alignment: Alignment.center,
                 children: [
                   WaveSlider(
                     dragPercentage: _secondDragPercentage,
@@ -245,26 +418,121 @@ class _WaveScreenState extends State<WaveScreen> with TickerProviderStateMixin {
                     expectedSuccesses: secondExpectedSuccesses,
                     onChanged: (double value) {},
                   ),
-                  Positioned(
-                    left: 350 *
-                        _secondDragPercentage, // Assuming width 350 from WaveSlider default
-                    child: Container(
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.7),
-                        borderRadius: BorderRadius.circular(15),
-                      ),
-                      child: Text(
-                        '$_secondSliderPosition',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
+                  // Show "X" before animation starts
+                  if (!secondAnimationStarted)
+                    Positioned(
+                      left: 165, // Center of slider
+                      top: 15,
+                      child: Container(
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.5),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          'X',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ),
+                ],
+              ),
+
+              SizedBox(height: 40.0),
+
+              // Third roll target selector (Resolve)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Padding(
+                    padding: EdgeInsets.only(right: 20),
+                    child:
+                        Text('Resolve Target:', style: TextStyle(fontSize: 20)),
+                  ),
+                  TargetSelector(
+                    selectionLimit: 6,
+                    initialValue: thirdTarget,
+                    textSize: 20,
+                    onChanged: _onThirdTargetChanged,
                   ),
                 ],
+              ),
+
+              SizedBox(height: 20.0),
+
+              // Third wave slider section (Resolve)
+              Text(
+                'Resolve',
+                style: TextStyle(fontSize: 35, fontFamily: 'Permanent Marker'),
+              ),
+              SizedBox(height: 10.0),
+              Stack(
+                children: [
+                  WaveSlider(
+                    dragPercentage: _thirdDragPercentage,
+                    expectedSuccessPercentage: _thirdExpectedSuccessPercentage,
+                    numDice: thirdNumDice,
+                    expectedSuccesses: thirdExpectedSuccesses,
+                    onChanged: (double value) {},
+                  ),
+                  // Show "X" before animation starts
+                  if (!thirdAnimationStarted)
+                    Positioned(
+                      left: 165, // Center of slider
+                      top: 15,
+                      child: Container(
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.5),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          'X',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+
+              SizedBox(height: 40.0),
+
+              // Wounds counter
+              Container(
+                padding: EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.red, width: 2),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Total Wounds: ',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      '$totalWounds',
+                      style: TextStyle(
+                        fontSize: 30,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.red,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),

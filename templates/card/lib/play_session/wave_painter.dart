@@ -6,8 +6,8 @@ class WavePainter extends CustomPainter {
   final double sliderPosition;
   final double dragPercentage;
   final double expectedSuccessPercentage;
-  final int numDice; // New parameter for number of dice
-  final double expectedSuccesses; // New parameter for expected successes
+  final int numDice; // Number of dice
+  final double expectedSuccesses; // Expected successes
 
   final Color badColor = Color(0xFFFF4136); // Red
   final Color neutralColor = Color(0xFFFFDC00); // Yellow
@@ -29,7 +29,7 @@ class WavePainter extends CustomPainter {
           ..color = Colors.black
           ..style = PaintingStyle.fill,
         expectedLinePainter = Paint()
-          ..color = Colors.blue
+          ..color = Colors.black // Changed to black as requested
           ..strokeWidth = 3.0 {
     wavePainter = Paint()
       ..color = _calculateWaveColor(dragPercentage, expectedSuccessPercentage)
@@ -86,26 +86,30 @@ class WavePainter extends CustomPainter {
                 (textPainter.height / 2)) // Vertically centered with anchor
         );
 
-    // Annotate expected successes under the blue line
+    // Annotate expected successes ABOVE the line (moved from below)
     double xPosition = expectedSuccessPercentage * size.width;
     textPainter.text = TextSpan(
       text: expectedSuccesses.toStringAsFixed(1),
       style: TextStyle(
         color: Colors.black,
         fontSize: 14,
+        fontWeight: FontWeight.bold,
       ),
     );
     textPainter.layout(maxWidth: 100);
 
-    // Center the text under the line
+    // Center the text above the line
     double centeredXOffset = xPosition - (textPainter.width / 2);
 
-    textPainter.paint(canvas, Offset(centeredXOffset, size.height + 10));
+    // Position it above the line instead of below it, but clearly visible
+    textPainter.paint(canvas, Offset(centeredXOffset, 10));
   }
 
   void _paintAnchors(Canvas canvas, Size size) {
-    canvas.drawCircle(Offset(0.0, size.height), 5.0, fillPainter);
-    canvas.drawCircle(Offset(size.width, size.height), 5.0, fillPainter);
+    // Move anchors up slightly to ensure full visibility
+    double anchorY = size.height - 5.0;
+    canvas.drawCircle(Offset(0.0, anchorY), 5.0, fillPainter);
+    canvas.drawCircle(Offset(size.width, anchorY), 5.0, fillPainter);
   }
 
   void _paintWaveLine(Canvas canvas, Size size) {
@@ -132,11 +136,17 @@ class WavePainter extends CustomPainter {
   }
 
   void _paintExpectedSuccessLine(Canvas canvas, Size size) {
-    double xPosition = expectedSuccessPercentage *
-        size.width; // Convert percentage to x position
+    double xPosition = expectedSuccessPercentage * size.width;
+
+    // Make the line 25% shorter from the top (start 25% down)
+    double startY = size.height * 0.25;
+
+    // End the line exactly at the waveline
+    double endY = size.height - 2;
+
     canvas.drawLine(
-      Offset(xPosition, 0),
-      Offset(xPosition, size.height),
+      Offset(xPosition, startY),
+      Offset(xPosition, endY),
       expectedLinePainter,
     );
   }

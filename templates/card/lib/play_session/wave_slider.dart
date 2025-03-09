@@ -52,27 +52,43 @@ class _WaveSliderState extends State<WaveSlider> {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onHorizontalDragUpdate: (DragUpdateDetails update) {
-        RenderBox? box = context.findRenderObject() as RenderBox?;
-        if (box != null) {
-          Offset offset = box.globalToLocal(update.globalPosition);
-          _updateDragPosition(offset);
-        }
-      },
-      child: Container(
-        width: widget.width,
-        height: widget.height,
-        child: CustomPaint(
-          painter: WavePainter(
-            sliderPosition: _dragPosition,
-            dragPercentage: _dragPercentage,
-            expectedSuccessPercentage: widget.expectedSuccessPercentage,
-            numDice: widget.numDice,
-            expectedSuccesses: widget.expectedSuccesses,
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        Container(
+          width: widget.width,
+          height: widget.height +
+              40, // Add extra height for visibility of all elements
+          child: CustomPaint(
+            painter: WavePainter(
+              sliderPosition: _dragPosition,
+              dragPercentage: _dragPercentage,
+              expectedSuccessPercentage: widget.expectedSuccessPercentage,
+              numDice: widget.numDice,
+              expectedSuccesses: widget.expectedSuccesses,
+            ),
           ),
         ),
-      ),
+        // Center the value indicator with the wave and position above the wave line
+        Positioned(
+          left: _dragPosition - 15, // Center the value indicator with the wave
+          top: widget.height - 25, // Position it just above the wave line
+          child: Container(
+            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.5), // More transparent
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Text(
+              '${(widget.numDice * _dragPercentage).round()}',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

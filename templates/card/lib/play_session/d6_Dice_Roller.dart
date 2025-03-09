@@ -5,7 +5,7 @@ import 'target_selector.dart';
 class DiceRoller extends StatefulWidget {
   final void Function(int result, int numDice, double expectedSuccesses)
       onResult;
-  final bool hideResults; // New parameter to control visibility of results
+  final bool hideResults; // Parameter to control visibility of results
 
   const DiceRoller({
     super.key,
@@ -46,47 +46,68 @@ class _DiceRollerState extends State<DiceRoller> {
 
   @override
   Widget build(BuildContext context) {
-    double expectedSuccesses = calculateExpectedSuccesses(numDice, target);
+    calculateExpectedSuccesses(numDice, target);
 
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Row(children: [
-          Text('# Dice:', style: TextStyle(fontSize: 20)),
-          TargetSelector(
-            selectionLimit: 30,
-            initialValue: numDice,
-            onChanged: (value) => setState(() {
-              numDice = value;
-            }),
-          ),
-        ]),
-        SizedBox(height: 10),
-        Row(children: [
-          Text('# Target:', style: TextStyle(fontSize: 20)),
-          TargetSelector(
-            selectionLimit: 6,
-            initialValue: target,
-            onChanged: (value) => setState(() {
-              target = value;
-            }),
-          ),
-        ]),
-        SizedBox(height: 20),
-        OutlinedButton(
+        // Roll Dice button on the left
+        ElevatedButton(
           onPressed: _onPressed,
-          child: Text('Roll Dice'),
-        ),
-        // Display results only if hideResults is false
-        if (!widget.hideResults) ...[
-          SizedBox(height: 20),
-          Text('Successes: $_result', style: TextStyle(fontSize: 20)),
-          Text(
-            'Expected Successes: ${expectedSuccesses.toStringAsFixed(1)}',
-            style: TextStyle(fontSize: 16, color: Colors.grey),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.deepPurple,
+            padding: EdgeInsets.symmetric(
+                horizontal: 48, vertical: 24), // 50% larger
+            textStyle: TextStyle(fontSize: 20),
           ),
-        ],
+          child: Text('Roll Dice',
+              style:
+                  TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+        ),
+        // Selectors on the right
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Padding(
+                  padding: EdgeInsets.only(right: 20),
+                  child: Text('Dice:', style: TextStyle(fontSize: 20)),
+                ),
+                TargetSelector(
+                  selectionLimit: 30,
+                  initialValue: numDice,
+                  textSize: 20,
+                  onChanged: (value) => setState(() {
+                    numDice = value;
+                  }),
+                ),
+              ],
+            ),
+            SizedBox(height: 10),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Padding(
+                  padding: EdgeInsets.only(right: 20),
+                  child: Text('Target:', style: TextStyle(fontSize: 20)),
+                ),
+                TargetSelector(
+                  selectionLimit: 6,
+                  initialValue: target,
+                  textSize: 20,
+                  onChanged: (value) => setState(() {
+                    target = value;
+                  }),
+                ),
+              ],
+            ),
+          ],
+        ),
       ],
     );
+    // Display results only if hideResults is false
   }
 }

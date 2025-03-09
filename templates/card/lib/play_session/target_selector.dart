@@ -4,12 +4,14 @@ class TargetSelector extends StatelessWidget {
   final int selectionLimit;
   final int initialValue;
   final ValueChanged<int> onChanged;
+  final double textSize;
 
   const TargetSelector({
     super.key,
     required this.selectionLimit,
     required this.initialValue,
     required this.onChanged,
+    this.textSize = 16, // Default text size
   });
 
   @override
@@ -18,7 +20,10 @@ class TargetSelector extends StatelessWidget {
       value: initialValue,
       icon: const Icon(Icons.arrow_downward),
       elevation: 16,
-      style: const TextStyle(color: Colors.deepPurple),
+      style: TextStyle(
+        color: Colors.deepPurple,
+        fontSize: textSize, // Use the provided text size
+      ),
       underline: Container(height: 2, color: Colors.deepPurpleAccent),
       onChanged: (int? newValue) {
         if (newValue != null) {
