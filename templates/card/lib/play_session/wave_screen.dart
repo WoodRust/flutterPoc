@@ -17,6 +17,7 @@ class _WaveScreenState extends State<WaveScreen> with TickerProviderStateMixin {
   double _dragPercentage = 0.0;
   double _expectedSuccessPercentage = 0.0;
   int numDice = 1;
+  int target = 6; // Add target state to the WaveScreen level
   double expectedSuccesses = 0.0;
   int _firstSliderPosition = 0;
   int firstResult = 0;
@@ -253,8 +254,8 @@ class _WaveScreenState extends State<WaveScreen> with TickerProviderStateMixin {
       double expectedResolveFails = thirdNumDice - thirdExpectedSuccesses;
       expectedWounds = expectedDefenceFails + expectedResolveFails;
 
-      // Initially set actual wounds to match expected wounds
-      totalWounds = expectedWounds.round();
+      // Initialize actual wounds to 0 instead of expected wounds
+      totalWounds = 0;
     });
 
     // Start first animation
@@ -335,56 +336,54 @@ class _WaveScreenState extends State<WaveScreen> with TickerProviderStateMixin {
               // Primary dice roller
               DiceRoller(
                 onResult: _updateResults,
+                target: target, // Pass the target as a prop
                 hideResults: true, // Hide results display
               ),
 
               SizedBox(height: 10.0), // Reduced spacing after the dice roller
 
-              // First wave slider section (Hits)
+              // First wave slider section (Hits) with aligned title and target dropdown
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   // Hits title on the left
                   Text(
-                    'Hits',
+                    'Clash',
                     style:
                         TextStyle(fontSize: 35, fontFamily: 'Permanent Marker'),
+                  ),
+
+                  // Hits target selector on the right, aligned with title
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      //Text('Target:', style: TextStyle(fontSize: 20)),
+                      SizedBox(width: 20),
+                      TargetSelector(
+                        selectionLimit: 6,
+                        initialValue: target,
+                        textSize: 20,
+                        onChanged: (value) => setState(() {
+                          target = value;
+                          // Update expected successes
+                          expectedSuccesses =
+                              calculateExpectedSuccesses(numDice, target);
+                          _expectedSuccessPercentage =
+                              numDice > 0 ? expectedSuccesses / numDice : 0;
+                        }),
+                      ),
+                    ],
                   ),
                 ],
               ),
               SizedBox(height: 5.0),
-              Stack(
-                children: [
-                  WaveSlider(
-                    dragPercentage: _dragPercentage,
-                    expectedSuccessPercentage: _expectedSuccessPercentage,
-                    numDice: numDice,
-                    expectedSuccesses: expectedSuccesses,
-                    onChanged: (double value) {},
-                  ),
-                  // Show "X" before animation starts
-                  if (!firstAnimationStarted)
-                    Positioned(
-                      left: 165, // Center of slider (assuming 350px width)
-                      top: 15,
-                      child: Container(
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.5),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Text(
-                          'X',
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
+              WaveSlider(
+                dragPercentage: _dragPercentage,
+                expectedSuccessPercentage: _expectedSuccessPercentage,
+                numDice: numDice,
+                expectedSuccesses: expectedSuccesses,
+                onChanged: (double value) {},
               ),
 
               SizedBox(height: 5.0),
@@ -405,7 +404,7 @@ class _WaveScreenState extends State<WaveScreen> with TickerProviderStateMixin {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Text('Target:', style: TextStyle(fontSize: 20)),
+                      //Text('Target:', style: TextStyle(fontSize: 20)),
                       SizedBox(width: 20),
                       TargetSelector(
                         selectionLimit: 6,
@@ -418,37 +417,12 @@ class _WaveScreenState extends State<WaveScreen> with TickerProviderStateMixin {
                 ],
               ),
               SizedBox(height: 5.0),
-              Stack(
-                children: [
-                  WaveSlider(
-                    dragPercentage: _secondDragPercentage,
-                    expectedSuccessPercentage: _secondExpectedSuccessPercentage,
-                    numDice: secondNumDice,
-                    expectedSuccesses: secondExpectedSuccesses,
-                    onChanged: (double value) {},
-                  ),
-                  // Show "X" before animation starts
-                  if (!secondAnimationStarted)
-                    Positioned(
-                      left: 165, // Center of slider
-                      top: 15,
-                      child: Container(
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.5),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Text(
-                          'X',
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
+              WaveSlider(
+                dragPercentage: _secondDragPercentage,
+                expectedSuccessPercentage: _secondExpectedSuccessPercentage,
+                numDice: secondNumDice,
+                expectedSuccesses: secondExpectedSuccesses,
+                onChanged: (double value) {},
               ),
 
               SizedBox(height: 5.0),
@@ -469,7 +443,7 @@ class _WaveScreenState extends State<WaveScreen> with TickerProviderStateMixin {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Text('Target:', style: TextStyle(fontSize: 20)),
+                      //Text('Target:', style: TextStyle(fontSize: 20)),
                       SizedBox(width: 20),
                       TargetSelector(
                         selectionLimit: 6,
@@ -482,37 +456,12 @@ class _WaveScreenState extends State<WaveScreen> with TickerProviderStateMixin {
                 ],
               ),
               SizedBox(height: 5.0),
-              Stack(
-                children: [
-                  WaveSlider(
-                    dragPercentage: _thirdDragPercentage,
-                    expectedSuccessPercentage: _thirdExpectedSuccessPercentage,
-                    numDice: thirdNumDice,
-                    expectedSuccesses: thirdExpectedSuccesses,
-                    onChanged: (double value) {},
-                  ),
-                  // Show "X" before animation starts
-                  if (!thirdAnimationStarted)
-                    Positioned(
-                      left: 165, // Center of slider
-                      top: 15,
-                      child: Container(
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.5),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Text(
-                          'X',
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
+              WaveSlider(
+                dragPercentage: _thirdDragPercentage,
+                expectedSuccessPercentage: _thirdExpectedSuccessPercentage,
+                numDice: thirdNumDice,
+                expectedSuccesses: thirdExpectedSuccesses,
+                onChanged: (double value) {},
               ),
 
               SizedBox(

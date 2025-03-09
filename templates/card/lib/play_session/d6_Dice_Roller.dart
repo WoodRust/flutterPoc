@@ -5,11 +5,13 @@ import 'target_selector.dart';
 class DiceRoller extends StatefulWidget {
   final void Function(int result, int numDice, double expectedSuccesses)
       onResult;
-  final bool hideResults; // Parameter to control visibility of results
+  final bool hideResults;
+  final int target; // Now we receive target as a prop from parent
 
   const DiceRoller({
     super.key,
     required this.onResult,
+    required this.target, // Required prop
     this.hideResults = false,
   });
 
@@ -21,7 +23,7 @@ class _DiceRollerState extends State<DiceRoller> {
   final Random _random = Random();
   int _result = 0;
   int numDice = 1;
-  int target = 6;
+  // Target is now a prop from parent, not maintained here
 
   int rollDice(int numDice, int target) {
     int count = 0;
@@ -37,17 +39,17 @@ class _DiceRollerState extends State<DiceRoller> {
   }
 
   void _onPressed() {
+    // Use the target passed as a prop
     setState(() {
-      _result = rollDice(numDice, target);
+      _result = rollDice(numDice, widget.target);
     });
-    double expectedSuccesses = calculateExpectedSuccesses(numDice, target);
+    double expectedSuccesses =
+        calculateExpectedSuccesses(numDice, widget.target);
     widget.onResult(_result, numDice, expectedSuccesses);
   }
 
   @override
   Widget build(BuildContext context) {
-    calculateExpectedSuccesses(numDice, target);
-
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -65,49 +67,24 @@ class _DiceRollerState extends State<DiceRoller> {
               style:
                   TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
         ),
-        // Selectors on the right
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.end,
+
+        // Only the Dice number selector, no Target selector
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                Padding(
-                  padding: EdgeInsets.only(right: 20),
-                  child: Text('Dice:', style: TextStyle(fontSize: 20)),
-                ),
-                TargetSelector(
-                  selectionLimit: 30,
-                  initialValue: numDice,
-                  textSize: 20,
-                  onChanged: (value) => setState(() {
-                    numDice = value;
-                  }),
-                ),
-              ],
-            ),
-            SizedBox(height: 10),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                Padding(
-                  padding: EdgeInsets.only(right: 20),
-                  child: Text('Target:', style: TextStyle(fontSize: 20)),
-                ),
-                TargetSelector(
-                  selectionLimit: 6,
-                  initialValue: target,
-                  textSize: 20,
-                  onChanged: (value) => setState(() {
-                    target = value;
-                  }),
-                ),
-              ],
+            Text('Dice:', style: TextStyle(fontSize: 20)),
+            SizedBox(width: 20),
+            TargetSelector(
+              selectionLimit: 30,
+              initialValue: numDice,
+              textSize: 20,
+              onChanged: (value) => setState(() {
+                numDice = value;
+              }),
             ),
           ],
         ),
       ],
     );
-    // Display results only if hideResults is false
   }
 }
