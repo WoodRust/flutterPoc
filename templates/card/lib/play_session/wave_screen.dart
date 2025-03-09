@@ -44,6 +44,7 @@ class _WaveScreenState extends State<WaveScreen> with TickerProviderStateMixin {
 
   // Wounds counter
   int totalWounds = 0;
+  double expectedWounds = 0.0;
 
   // Animation controllers
   late AnimationController _controller;
@@ -175,13 +176,19 @@ class _WaveScreenState extends State<WaveScreen> with TickerProviderStateMixin {
     _updateWoundsCounter();
   }
 
-  // Update the total wounds count
+  // Update the wounds counters (both actual and expected)
   void _updateWoundsCounter() {
+    // Calculate actual wounds
     int defenceFails = secondNumDice - _secondSliderPosition;
     int resolveFails = thirdNumDice - _thirdSliderPosition;
 
+    // Calculate expected wounds
+    double expectedDefenceFails = secondNumDice - secondExpectedSuccesses;
+    double expectedResolveFails = thirdNumDice - thirdExpectedSuccesses;
+
     setState(() {
       totalWounds = defenceFails + resolveFails;
+      expectedWounds = expectedDefenceFails + expectedResolveFails;
     });
   }
 
@@ -241,8 +248,13 @@ class _WaveScreenState extends State<WaveScreen> with TickerProviderStateMixin {
       _secondSliderPosition = 0;
       _thirdSliderPosition = 0;
 
-      // Update wounds counter
-      _updateWoundsCounter();
+      // Calculate expected wounds
+      double expectedDefenceFails = secondNumDice - secondExpectedSuccesses;
+      double expectedResolveFails = thirdNumDice - thirdExpectedSuccesses;
+      expectedWounds = expectedDefenceFails + expectedResolveFails;
+
+      // Initially set actual wounds to match expected wounds
+      totalWounds = expectedWounds.round();
     });
 
     // Start first animation
@@ -271,50 +283,34 @@ class _WaveScreenState extends State<WaveScreen> with TickerProviderStateMixin {
   void _onSecondTargetChanged(int value) {
     setState(() {
       secondTarget = value;
+
+      // Only update expected values, not actual dice rolls
       secondExpectedSuccesses =
           calculateExpectedSuccesses(secondNumDice, secondTarget);
       _secondExpectedSuccessPercentage =
           secondNumDice > 0 ? secondExpectedSuccesses / secondNumDice : 0;
 
-      // Recalculate the second roll with the new target
-      if (secondNumDice > 0) {
-        secondResult = rollDice(secondNumDice, secondTarget);
-
-        // Update third roll inputs based on new second roll results
-        thirdNumDice = secondNumDice - secondResult;
-        thirdExpectedSuccesses =
-            calculateExpectedSuccesses(thirdNumDice, thirdTarget);
-        _thirdExpectedSuccessPercentage =
-            thirdNumDice > 0 ? thirdExpectedSuccesses / thirdNumDice : 0;
-
-        // Recalculate the third roll
-        thirdResult = rollDice(thirdNumDice, thirdTarget);
-
-        // Reset and restart animations if needed
-        if (secondAnimationStarted) {
-          _startSecondAnimation();
-        }
-      }
+      // Update expected wounds
+      double expectedDefenceFails = secondNumDice - secondExpectedSuccesses;
+      double expectedResolveFails = thirdNumDice - thirdExpectedSuccesses;
+      expectedWounds = expectedDefenceFails + expectedResolveFails;
     });
   }
 
   void _onThirdTargetChanged(int value) {
     setState(() {
       thirdTarget = value;
+
+      // Only update expected values, not actual dice rolls
       thirdExpectedSuccesses =
           calculateExpectedSuccesses(thirdNumDice, thirdTarget);
       _thirdExpectedSuccessPercentage =
           thirdNumDice > 0 ? thirdExpectedSuccesses / thirdNumDice : 0;
 
-      // Recalculate the third roll with the new target
-      if (thirdNumDice > 0) {
-        thirdResult = rollDice(thirdNumDice, thirdTarget);
-
-        // Restart animation if already started
-        if (thirdAnimationStarted) {
-          _startThirdAnimation();
-        }
-      }
+      // Update expected wounds
+      double expectedDefenceFails = secondNumDice - secondExpectedSuccesses;
+      double expectedResolveFails = thirdNumDice - thirdExpectedSuccesses;
+      expectedWounds = expectedDefenceFails + expectedResolveFails;
     });
   }
 
@@ -503,33 +499,76 @@ class _WaveScreenState extends State<WaveScreen> with TickerProviderStateMixin {
                 ],
               ),
 
-              SizedBox(height: 40.0),
+              SizedBox(height: 35.0), // Reduced from 40.0
 
               // Wounds counter
               Container(
-                padding: EdgeInsets.all(16),
+                padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                width: 270, // Make the box slightly narrower
                 decoration: BoxDecoration(
                   color: Colors.red.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.red, width: 2),
+                  border: Border.all(
+                      color: Colors.red, width: 1.5), // Thinner border
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min, // Take minimum space needed
                   children: [
+                    // Title
                     Text(
-                      'Total Wounds: ',
+                      'Wounds',
                       style: TextStyle(
-                        fontSize: 24,
+                        fontSize: 22,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    Text(
-                      '$totalWounds',
-                      style: TextStyle(
-                        fontSize: 30,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.red,
-                      ),
+                    SizedBox(height: 2), // Reduced spacing
+                    // Values row
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        // Expected wounds on the left
+                        Row(
+                          children: [
+                            Text(
+                              '${expectedWounds.toStringAsFixed(1)}',
+                              style: TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.deepPurple,
+                              ),
+                            ),
+                            Text(
+                              ' xW',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        // Actual wounds on the right
+                        Row(
+                          children: [
+                            Text(
+                              '$totalWounds',
+                              style: TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.red,
+                              ),
+                            ),
+                            Text(
+                              ' W',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ],
                 ),
