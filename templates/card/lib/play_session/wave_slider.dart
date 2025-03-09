@@ -12,8 +12,8 @@ class WaveSlider extends StatefulWidget {
   final double expectedSuccesses;
 
   const WaveSlider({
-    this.width = 350.0,
-    this.height = 60.0,
+    this.width = 400.0, // Increased from 350.0 to use more horizontal space
+    this.height = 70.0, // Increased from 60.0 to give more vertical space
     this.color = Colors.black,
     required this.onChanged,
     this.dragPercentage = 0.0,
@@ -54,7 +54,7 @@ class _WaveSliderState extends State<WaveSlider> {
   Widget build(BuildContext context) {
     // Create a buffer around the slider for visual elements
     final horizontalBuffer = 20.0;
-    final verticalBuffer = 15.0; // Reduced to allow more vertical space
+    final verticalBuffer = 10.0; // Further reduced to maximize space
 
     // Calculate the actual drawing area dimensions
     final drawingWidth = widget.width - (horizontalBuffer * 2);
@@ -66,7 +66,7 @@ class _WaveSliderState extends State<WaveSlider> {
 
     return Container(
       width: widget.width,
-      height: widget.height + 35, // Slightly reduced extra height
+      height: widget.height + 25, // Extra space for text below
       // Add a light border for debugging
       decoration: BoxDecoration(
         border: Border.all(color: Colors.grey.withOpacity(0.1)),
@@ -93,18 +93,22 @@ class _WaveSliderState extends State<WaveSlider> {
                 drawingWidth: drawingWidth,
                 drawingHeight: drawingHeight,
               ),
+              // This forces CustomPainter to use the full size
+              size: Size(widget.width, widget.height + 25),
             ),
           ),
 
-          // Value indicator - adjusted position to match new wave layout
+          // Value indicator - positioned just above the wave line
           Positioned(
             left: adjustedDragPosition - 15, // Center it on the wave
-            top: widget.height - 40, // Moved higher to be above wave line
+            top: widget.height - 35, // Position above the wave line
             child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              padding: EdgeInsets.symmetric(
+                  horizontal: 8, vertical: 2), // Reduced vertical padding
               decoration: BoxDecoration(
                 color: Colors.white.withOpacity(0.5),
-                borderRadius: BorderRadius.circular(10),
+                borderRadius:
+                    BorderRadius.circular(8), // Slightly smaller radius
               ),
               child: Text(
                 '${(widget.numDice * _dragPercentage).round()}',

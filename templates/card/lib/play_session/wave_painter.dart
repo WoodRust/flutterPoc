@@ -66,58 +66,97 @@ class WavePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    // Calculate the drawing area - shifted down to utilize more of the bottom space
-    // Use more vertical space while maintaining buffers
+    // Calculate the drawing area - use almost all available space
     final drawingArea = Rect.fromLTWH(
         horizontalBuffer, // Left buffer
-        verticalBuffer, // Top buffer
+        verticalBuffer * 0.8, // Reduced top buffer
         drawingWidth, // Width between buffers
-        drawingHeight - (verticalBuffer * 1.2) // Extend down closer to bottom
+        drawingHeight - (verticalBuffer) // Extend down almost to bottom
         );
 
-    // Draw all elements
+    // Paint elements in correct order for layering
     _paintWaveLine(canvas, size, drawingArea);
-    _paintExpectedSuccessLine(canvas, size, drawingArea);
     _paintAnchors(canvas, size, drawingArea);
-    _paintAnnotations(canvas, size, drawingArea);
+    _paintExpectedSuccessDot(canvas, size, drawingArea);
+    _paintExpectedSuccessText(canvas, size, drawingArea);
+    _paintDiceCountAnnotation(canvas, size, drawingArea);
   }
 
-  void _paintAnnotations(Canvas canvas, Size size, Rect drawingArea) {
+  void _paintExpectedSuccessDot(Canvas canvas, Size size, Rect drawingArea) {
+    double xPosition =
+        drawingArea.left + (expectedSuccessPercentage * drawingArea.width);
+
+    // Only draw if within the drawing area
+    if (xPosition >= drawingArea.left && xPosition <= drawingArea.right) {
+      // Create a dot on the wave line - slightly smaller than anchor points
+      final dotPaint = Paint()
+        ..color = Colors.black
+        ..style = PaintingStyle.fill;
+
+      canvas.drawCircle(
+          Offset(xPosition, drawingArea.bottom),
+          4.0, // Slightly smaller than anchor points (5.0)
+          dotPaint);
+    }
+  }
+
+  void _paintExpectedSuccessText(Canvas canvas, Size size, Rect drawingArea) {
     final textPainter = TextPainter(
       textAlign: TextAlign.left,
       textDirection: TextDirection.ltr,
     );
 
-    // Annotate number of dice to the right of the right anchor point
-    textPainter.text = TextSpan(
-      text: '$numDice',
-      style: TextStyle(
-        color: Colors.black,
-        fontSize: 14,
-      ),
-    );
-    textPainter.layout();
-    textPainter.paint(
-        canvas,
-        Offset(drawingArea.right + 5,
-            drawingArea.bottom - (textPainter.height / 2)));
-
-    // Annotate expected successes above the line
     double xPosition =
         drawingArea.left + (expectedSuccessPercentage * drawingArea.width);
+
+    // Only draw if within the drawing area
+    if (xPosition >= drawingArea.left && xPosition <= drawingArea.right) {
+      textPainter.text = TextSpan(
+        text: expectedSuccesses.toStringAsFixed(1),
+        style: TextStyle(
+          color: Colors.black,
+          fontSize: 14,
+          fontWeight: FontWeight.bold,
+        ),
+      );
+      textPainter.layout(maxWidth: 100);
+
+      // Center the text below the expected dot
+      double centeredXOffset = xPosition - (textPainter.width / 2);
+
+      // Ensure text stays within bounds
+      centeredXOffset = centeredXOffset.clamp(
+          drawingArea.left, drawingArea.right - textPainter.width);
+
+      // Position text below the wave line
+      double textY = drawingArea.bottom + 10;
+      textPainter.paint(canvas, Offset(centeredXOffset, textY));
+    }
+  }
+
+  void _paintDiceCountAnnotation(Canvas canvas, Size size, Rect drawingArea) {
+    final textPainter = TextPainter(
+      textAlign: TextAlign.left,
+      textDirection: TextDirection.ltr,
+    );
+
+    // Annotate number of dice below the right anchor point
     textPainter.text = TextSpan(
-      text: expectedSuccesses.toStringAsFixed(1),
+      text: '$numDice',
       style: TextStyle(
         color: Colors.black,
         fontSize: 14,
         fontWeight: FontWeight.bold,
       ),
     );
-    textPainter.layout(maxWidth: 100);
+    textPainter.layout();
 
-    // Center the text above the line
-    double centeredXOffset = xPosition - (textPainter.width / 2);
-    textPainter.paint(canvas, Offset(centeredXOffset, verticalBuffer));
+    // Center the text below the right anchor point
+    double centeredXOffset = drawingArea.right - (textPainter.width / 2);
+
+    // Position text below the wave line
+    double textY = drawingArea.bottom + 10;
+    textPainter.paint(canvas, Offset(centeredXOffset, textY));
   }
 
   void _paintAnchors(Canvas canvas, Size size, Rect drawingArea) {
@@ -149,27 +188,12 @@ class WavePainter extends CustomPainter {
     canvas.drawPath(path, wavePainter);
   }
 
-  void _paintExpectedSuccessLine(Canvas canvas, Size size, Rect drawingArea) {
-    double xPosition =
-        drawingArea.left + (expectedSuccessPercentage * drawingArea.width);
-
-    // Draw the line starting higher up and ending exactly at the wave line
-    double startY = drawingArea.top + (verticalBuffer / 2); // Start higher
-    double endY = drawingArea.bottom - 2; // Just above the wave line
-
-    canvas.drawLine(
-      Offset(xPosition, startY),
-      Offset(xPosition, endY),
-      expectedLinePainter,
-    );
-  }
-
   WaveCurveDefinitions _calculateWaveLineDefinitions(
       Size size, Rect drawingArea) {
-    // Increase the wave height by adjusting these factors
-    double minWaveHeight =
-        drawingArea.height * 0.15; // Slightly reduced minimum
-    double maxWaveHeight = drawingArea.height * 0.9; // Increased maximum
+    // Further increase the wave height by adjusting these factors
+    double minWaveHeight = drawingArea.height * 0.1; // Further reduced minimum
+    double maxWaveHeight =
+        drawingArea.height * 0.95; // Increased maximum even more
 
     // Calculate the control height for the wave peak
     double controlHeight = drawingArea.top +

@@ -326,7 +326,8 @@ class _WaveScreenState extends State<WaveScreen> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        padding: EdgeInsets.all(32.0),
+        padding: EdgeInsets.all(
+            24.0), // Reduced padding to utilize more screen space
         child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -336,14 +337,23 @@ class _WaveScreenState extends State<WaveScreen> with TickerProviderStateMixin {
                 onResult: _updateResults,
                 hideResults: true, // Hide results display
               ),
-              SizedBox(height: 30.0),
+
+              SizedBox(height: 10.0), // Reduced spacing after the dice roller
 
               // First wave slider section (Hits)
-              Text(
-                'Hits',
-                style: TextStyle(fontSize: 35, fontFamily: 'Permanent Marker'),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // Hits title on the left
+                  Text(
+                    'Hits',
+                    style:
+                        TextStyle(fontSize: 35, fontFamily: 'Permanent Marker'),
+                  ),
+                ],
               ),
-              SizedBox(height: 5.0), // Reduced from 10.0
+              SizedBox(height: 5.0),
               Stack(
                 children: [
                   WaveSlider(
@@ -353,7 +363,7 @@ class _WaveScreenState extends State<WaveScreen> with TickerProviderStateMixin {
                     expectedSuccesses: expectedSuccesses,
                     onChanged: (double value) {},
                   ),
-                  // Show "X" before animation starts or if not started
+                  // Show "X" before animation starts
                   if (!firstAnimationStarted)
                     Positioned(
                       left: 165, // Center of slider (assuming 350px width)
@@ -377,34 +387,37 @@ class _WaveScreenState extends State<WaveScreen> with TickerProviderStateMixin {
                 ],
               ),
 
-              SizedBox(height: 40.0),
+              SizedBox(height: 5.0),
 
-              // Second roll target selector (Defence)
+              // Second wave slider section (Defence) with aligned title and target selector
               Row(
-                mainAxisAlignment: MainAxisAlignment.end,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Padding(
-                    padding: EdgeInsets.only(right: 20),
-                    child:
-                        Text('Defence Target:', style: TextStyle(fontSize: 20)),
+                  // Defence title on the left
+                  Text(
+                    'Defence',
+                    style:
+                        TextStyle(fontSize: 35, fontFamily: 'Permanent Marker'),
                   ),
-                  TargetSelector(
-                    selectionLimit: 6,
-                    initialValue: secondTarget,
-                    textSize: 20,
-                    onChanged: _onSecondTargetChanged,
+
+                  // Defence target selector on the right, aligned with title
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Text('Target:', style: TextStyle(fontSize: 20)),
+                      SizedBox(width: 20),
+                      TargetSelector(
+                        selectionLimit: 6,
+                        initialValue: secondTarget,
+                        textSize: 20,
+                        onChanged: _onSecondTargetChanged,
+                      ),
+                    ],
                   ),
                 ],
               ),
-
-              SizedBox(height: 20.0),
-
-              // Second wave slider section (Defence)
-              Text(
-                'Defence',
-                style: TextStyle(fontSize: 35, fontFamily: 'Permanent Marker'),
-              ),
-              SizedBox(height: 5.0), // Reduced from 10.0
+              SizedBox(height: 5.0),
               Stack(
                 children: [
                   WaveSlider(
@@ -438,34 +451,37 @@ class _WaveScreenState extends State<WaveScreen> with TickerProviderStateMixin {
                 ],
               ),
 
-              SizedBox(height: 40.0),
+              SizedBox(height: 5.0),
 
-              // Third roll target selector (Resolve)
+              // Third wave slider section (Resolve) with aligned title and target selector
               Row(
-                mainAxisAlignment: MainAxisAlignment.end,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Padding(
-                    padding: EdgeInsets.only(right: 20),
-                    child:
-                        Text('Resolve Target:', style: TextStyle(fontSize: 20)),
+                  // Resolve title on the left
+                  Text(
+                    'Resolve',
+                    style:
+                        TextStyle(fontSize: 35, fontFamily: 'Permanent Marker'),
                   ),
-                  TargetSelector(
-                    selectionLimit: 6,
-                    initialValue: thirdTarget,
-                    textSize: 20,
-                    onChanged: _onThirdTargetChanged,
+
+                  // Resolve target selector on the right, aligned with title
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Text('Target:', style: TextStyle(fontSize: 20)),
+                      SizedBox(width: 20),
+                      TargetSelector(
+                        selectionLimit: 6,
+                        initialValue: thirdTarget,
+                        textSize: 20,
+                        onChanged: _onThirdTargetChanged,
+                      ),
+                    ],
                   ),
                 ],
               ),
-
-              SizedBox(height: 20.0),
-
-              // Third wave slider section (Resolve)
-              Text(
-                'Resolve',
-                style: TextStyle(fontSize: 35, fontFamily: 'Permanent Marker'),
-              ),
-              SizedBox(height: 5.0), // Reduced from 10.0
+              SizedBox(height: 5.0),
               Stack(
                 children: [
                   WaveSlider(
@@ -499,7 +515,9 @@ class _WaveScreenState extends State<WaveScreen> with TickerProviderStateMixin {
                 ],
               ),
 
-              SizedBox(height: 35.0), // Reduced from 40.0
+              SizedBox(
+                  height:
+                      15.0), // Slightly larger gap before the wounds counter
 
               // Wounds counter
               Container(
