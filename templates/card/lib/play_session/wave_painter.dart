@@ -1,13 +1,18 @@
 import 'dart:ui';
-
 import 'package:flutter/material.dart';
 
 class WavePainter extends CustomPainter {
   final double sliderPosition;
   final double dragPercentage;
   final double expectedSuccessPercentage;
-  final int numDice; // Number of dice
-  final double expectedSuccesses; // Expected successes
+  final int numDice;
+  final double expectedSuccesses;
+
+  // Buffer and drawing area parameters
+  final double horizontalBuffer;
+  final double verticalBuffer;
+  final double drawingWidth;
+  final double drawingHeight;
 
   final Color badColor = Color(0xFFFF4136); // Red
   final Color neutralColor = Color(0xFFFFDC00); // Yellow
@@ -23,13 +28,17 @@ class WavePainter extends CustomPainter {
     required this.sliderPosition,
     required this.dragPercentage,
     required this.expectedSuccessPercentage,
-    this.numDice = 1, // Default to 1 if not provided
-    this.expectedSuccesses = 0, // Default to 0 if not provided
+    this.numDice = 1,
+    this.expectedSuccesses = 0,
+    required this.horizontalBuffer,
+    required this.verticalBuffer,
+    required this.drawingWidth,
+    required this.drawingHeight,
   })  : fillPainter = Paint()
           ..color = Colors.black
           ..style = PaintingStyle.fill,
         expectedLinePainter = Paint()
-          ..color = Colors.black // Changed to black as requested
+          ..color = Colors.black
           ..strokeWidth = 3.0 {
     wavePainter = Paint()
       ..color = _calculateWaveColor(dragPercentage, expectedSuccessPercentage)
@@ -57,13 +66,23 @@ class WavePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    _paintAnchors(canvas, size);
-    _paintWaveLine(canvas, size);
-    _paintExpectedSuccessLine(canvas, size);
-    _paintAnnotations(canvas, size);
+    // Calculate the drawing area - shifted down to utilize more of the bottom space
+    // Use more vertical space while maintaining buffers
+    final drawingArea = Rect.fromLTWH(
+        horizontalBuffer, // Left buffer
+        verticalBuffer, // Top buffer
+        drawingWidth, // Width between buffers
+        drawingHeight - (verticalBuffer * 1.2) // Extend down closer to bottom
+        );
+
+    // Draw all elements
+    _paintWaveLine(canvas, size, drawingArea);
+    _paintExpectedSuccessLine(canvas, size, drawingArea);
+    _paintAnchors(canvas, size, drawingArea);
+    _paintAnnotations(canvas, size, drawingArea);
   }
 
-  void _paintAnnotations(Canvas canvas, Size size) {
+  void _paintAnnotations(Canvas canvas, Size size, Rect drawingArea) {
     final textPainter = TextPainter(
       textAlign: TextAlign.left,
       textDirection: TextDirection.ltr,
@@ -80,14 +99,12 @@ class WavePainter extends CustomPainter {
     textPainter.layout();
     textPainter.paint(
         canvas,
-        Offset(
-            size.width + 10,
-            size.height -
-                (textPainter.height / 2)) // Vertically centered with anchor
-        );
+        Offset(drawingArea.right + 5,
+            drawingArea.bottom - (textPainter.height / 2)));
 
-    // Annotate expected successes ABOVE the line (moved from below)
-    double xPosition = expectedSuccessPercentage * size.width;
+    // Annotate expected successes above the line
+    double xPosition =
+        drawingArea.left + (expectedSuccessPercentage * drawingArea.width);
     textPainter.text = TextSpan(
       text: expectedSuccesses.toStringAsFixed(1),
       style: TextStyle(
@@ -100,49 +117,45 @@ class WavePainter extends CustomPainter {
 
     // Center the text above the line
     double centeredXOffset = xPosition - (textPainter.width / 2);
-
-    // Position it above the line instead of below it, but clearly visible
-    textPainter.paint(canvas, Offset(centeredXOffset, 10));
+    textPainter.paint(canvas, Offset(centeredXOffset, verticalBuffer));
   }
 
-  void _paintAnchors(Canvas canvas, Size size) {
-    // Move anchors up slightly to ensure full visibility
-    double anchorY = size.height - 5.0;
-    canvas.drawCircle(Offset(0.0, anchorY), 5.0, fillPainter);
-    canvas.drawCircle(Offset(size.width, anchorY), 5.0, fillPainter);
+  void _paintAnchors(Canvas canvas, Size size, Rect drawingArea) {
+    // Position anchors exactly at the ends of the drawing area
+    double waveCenterY = drawingArea.bottom;
+    canvas.drawCircle(Offset(drawingArea.left, waveCenterY), 5.0, fillPainter);
+    canvas.drawCircle(Offset(drawingArea.right, waveCenterY), 5.0, fillPainter);
   }
 
-  void _paintWaveLine(Canvas canvas, Size size) {
-    WaveCurveDefinitions waveCurve = _calculateWaveLineDefinitions(size);
+  void _paintWaveLine(Canvas canvas, Size size, Rect drawingArea) {
+    WaveCurveDefinitions waveCurve =
+        _calculateWaveLineDefinitions(size, drawingArea);
+    double waveY = drawingArea.bottom;
+
     Path path = Path();
-    path.moveTo(0.0, size.height);
-    path.lineTo(waveCurve.startofBezier, size.height);
+    path.moveTo(drawingArea.left, waveY);
+    path.lineTo(waveCurve.startofBezier, waveY);
     path.cubicTo(
         waveCurve.leftControlPoint1,
-        size.height,
+        waveY,
         waveCurve.leftControlPoint2,
         waveCurve.controlHeight,
         waveCurve.centerPoint,
         waveCurve.controlHeight);
-    path.cubicTo(
-        waveCurve.rightControlPoint1,
-        waveCurve.controlHeight,
-        waveCurve.rightControlPoint2,
-        size.height,
-        waveCurve.endOfBezier,
-        size.height);
-    path.lineTo(size.width, size.height);
+    path.cubicTo(waveCurve.rightControlPoint1, waveCurve.controlHeight,
+        waveCurve.rightControlPoint2, waveY, waveCurve.endOfBezier, waveY);
+    path.lineTo(drawingArea.right, waveY);
+
     canvas.drawPath(path, wavePainter);
   }
 
-  void _paintExpectedSuccessLine(Canvas canvas, Size size) {
-    double xPosition = expectedSuccessPercentage * size.width;
+  void _paintExpectedSuccessLine(Canvas canvas, Size size, Rect drawingArea) {
+    double xPosition =
+        drawingArea.left + (expectedSuccessPercentage * drawingArea.width);
 
-    // Make the line 25% shorter from the top (start 25% down)
-    double startY = size.height * 0.25;
-
-    // End the line exactly at the waveline
-    double endY = size.height - 2;
+    // Draw the line starting higher up and ending exactly at the wave line
+    double startY = drawingArea.top + (verticalBuffer / 2); // Start higher
+    double endY = drawingArea.bottom - 2; // Just above the wave line
 
     canvas.drawLine(
       Offset(xPosition, startY),
@@ -151,55 +164,78 @@ class WavePainter extends CustomPainter {
     );
   }
 
-  WaveCurveDefinitions _calculateWaveLineDefinitions(Size size) {
-    double minWaveHeight = size.height * 0.2;
-    double maxWaveHeight = size.height * 0.8;
-    double controlHeight =
-        (size.height - minWaveHeight) - maxWaveHeight * dragPercentage;
+  WaveCurveDefinitions _calculateWaveLineDefinitions(
+      Size size, Rect drawingArea) {
+    // Increase the wave height by adjusting these factors
+    double minWaveHeight =
+        drawingArea.height * 0.15; // Slightly reduced minimum
+    double maxWaveHeight = drawingArea.height * 0.9; // Increased maximum
 
+    // Calculate the control height for the wave peak
+    double controlHeight = drawingArea.top +
+        (drawingArea.height - minWaveHeight) -
+        (maxWaveHeight * dragPercentage);
+
+    // Calculate bend and bezier width - standard values
     double bendWidth = 20 + 20 * dragPercentage;
     double bezierWidth = 20 + 20 * dragPercentage;
 
-    double centerPoint = sliderPosition;
-    centerPoint = (centerPoint > size.width) ? size.width : centerPoint;
+    // Ensure the slider position is correctly mapped to the drawing area
+    double adjustedPosition = sliderPosition;
 
-    double startOfBend = sliderPosition - bendWidth / 2;
+    // Center point cannot exceed the drawing area
+    double centerPoint = adjustedPosition;
+    centerPoint = centerPoint.clamp(drawingArea.left, drawingArea.right);
+
+    // Calculate bezier curve points
+    double startOfBend = centerPoint - bendWidth / 2;
     double startOfBezier = startOfBend - bezierWidth;
-    double endOfBend = sliderPosition + bendWidth / 2;
+    double endOfBend = centerPoint + bendWidth / 2;
     double endOfBezier = endOfBend + bezierWidth;
 
-    startOfBend = (startOfBend <= 0.0) ? 0.0 : startOfBend;
-    startOfBezier = (startOfBezier <= 0.0) ? 0.0 : startOfBezier;
-    endOfBend = (endOfBend >= size.width) ? size.width : endOfBend;
-    endOfBezier = (endOfBezier >= size.width) ? size.width : endOfBezier;
+    // Constrain points to the drawing area
+    startOfBend = startOfBend.clamp(drawingArea.left, drawingArea.right);
+    startOfBezier = startOfBezier.clamp(drawingArea.left, drawingArea.right);
+    endOfBend = endOfBend.clamp(drawingArea.left, drawingArea.right);
+    endOfBezier = endOfBezier.clamp(drawingArea.left, drawingArea.right);
 
+    // Control points
     double leftControlPoint1 = startOfBend;
     double leftControlPoint2 = startOfBend;
     double rightControlPoint1 = endOfBend;
     double rightControlPoint2 = endOfBend;
 
+    // Calculate bending based on position change
     double bendability = 25.0;
-    double maxSlideDifference =
-        15; // how fast you need to move it to get max bendability.
+    double maxSlideDifference = 15.0;
 
     double slideDifference = (sliderPosition - _previousSliderPosition).abs();
-    if (slideDifference > maxSlideDifference) {
-      slideDifference = maxSlideDifference;
-    }
+    slideDifference = slideDifference.clamp(0.0, maxSlideDifference);
 
     bool moveLeft = sliderPosition < _previousSliderPosition;
 
     double bend =
         lerpDouble(0.0, bendability, slideDifference / maxSlideDifference) ??
             0.0;
-
     bend = moveLeft ? -bend : bend;
 
+    // Apply bend to control points
     leftControlPoint1 = leftControlPoint1 + bend;
     leftControlPoint2 = leftControlPoint2 - bend;
     rightControlPoint1 = rightControlPoint1 - bend;
     rightControlPoint2 = rightControlPoint2 + bend;
     centerPoint = centerPoint - bend;
+
+    // Constrain bent points to drawing area
+    leftControlPoint1 =
+        leftControlPoint1.clamp(drawingArea.left, drawingArea.right);
+    leftControlPoint2 =
+        leftControlPoint2.clamp(drawingArea.left, drawingArea.right);
+    rightControlPoint1 =
+        rightControlPoint1.clamp(drawingArea.left, drawingArea.right);
+    rightControlPoint2 =
+        rightControlPoint2.clamp(drawingArea.left, drawingArea.right);
+    centerPoint = centerPoint.clamp(drawingArea.left, drawingArea.right);
 
     return WaveCurveDefinitions(
       startofBezier: startOfBezier,
@@ -232,13 +268,14 @@ class WaveCurveDefinitions {
   double controlHeight;
   double centerPoint;
 
-  WaveCurveDefinitions(
-      {required this.startofBezier,
-      required this.endOfBezier,
-      required this.leftControlPoint1,
-      required this.leftControlPoint2,
-      required this.rightControlPoint1,
-      required this.rightControlPoint2,
-      required this.controlHeight,
-      required this.centerPoint});
+  WaveCurveDefinitions({
+    required this.startofBezier,
+    required this.endOfBezier,
+    required this.leftControlPoint1,
+    required this.leftControlPoint2,
+    required this.rightControlPoint1,
+    required this.rightControlPoint2,
+    required this.controlHeight,
+    required this.centerPoint,
+  });
 }

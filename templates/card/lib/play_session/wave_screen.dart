@@ -343,7 +343,7 @@ class _WaveScreenState extends State<WaveScreen> with TickerProviderStateMixin {
                 'Hits',
                 style: TextStyle(fontSize: 35, fontFamily: 'Permanent Marker'),
               ),
-              SizedBox(height: 10.0),
+              SizedBox(height: 5.0), // Reduced from 10.0
               Stack(
                 children: [
                   WaveSlider(
@@ -404,7 +404,7 @@ class _WaveScreenState extends State<WaveScreen> with TickerProviderStateMixin {
                 'Defence',
                 style: TextStyle(fontSize: 35, fontFamily: 'Permanent Marker'),
               ),
-              SizedBox(height: 10.0),
+              SizedBox(height: 5.0), // Reduced from 10.0
               Stack(
                 children: [
                   WaveSlider(
@@ -465,7 +465,7 @@ class _WaveScreenState extends State<WaveScreen> with TickerProviderStateMixin {
                 'Resolve',
                 style: TextStyle(fontSize: 35, fontFamily: 'Permanent Marker'),
               ),
-              SizedBox(height: 10.0),
+              SizedBox(height: 5.0), // Reduced from 10.0
               Stack(
                 children: [
                   WaveSlider(
