@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
 import 'dart:async';
-import 'd6_Dice_Roller.dart';
 import 'wave_slider.dart';
 import 'target_selector.dart';
 
@@ -13,11 +12,13 @@ class WaveScreen extends StatefulWidget {
 }
 
 class _WaveScreenState extends State<WaveScreen> with TickerProviderStateMixin {
+  final Random _random = Random();
+
   // First wave slider state (Hits)
   double _dragPercentage = 0.0;
   double _expectedSuccessPercentage = 0.0;
   int numDice = 1;
-  int target = 6; // Add target state to the WaveScreen level
+  int target = 6;
   double expectedSuccesses = 0.0;
   int _firstSliderPosition = 0;
   int firstResult = 0;
@@ -26,20 +27,20 @@ class _WaveScreenState extends State<WaveScreen> with TickerProviderStateMixin {
   // Second wave slider state (Defence)
   double _secondDragPercentage = 0.0;
   double _secondExpectedSuccessPercentage = 0.0;
-  int secondNumDice = 0; // Will be set from first roll's successes
+  int secondNumDice = 0;
   double secondExpectedSuccesses = 0.0;
-  int secondTarget = 4; // Default second target value
-  int secondResult = 0; // To store second roll result
+  int secondTarget = 4;
+  int secondResult = 0;
   int _secondSliderPosition = 0;
   bool secondAnimationStarted = false;
 
   // Third wave slider state (Resolve)
   double _thirdDragPercentage = 0.0;
   double _thirdExpectedSuccessPercentage = 0.0;
-  int thirdNumDice = 0; // Will be set from second roll's fails
+  int thirdNumDice = 0;
   double thirdExpectedSuccesses = 0.0;
-  int thirdTarget = 4; // Default third target value
-  int thirdResult = 0; // To store third roll result
+  int thirdTarget = 4;
+  int thirdResult = 0;
   int _thirdSliderPosition = 0;
   bool thirdAnimationStarted = false;
 
@@ -103,6 +104,43 @@ class _WaveScreenState extends State<WaveScreen> with TickerProviderStateMixin {
           print("Third animation completed"); // Debug
         }
       });
+
+    // Initialize expected values
+    _updateExpectedValues();
+  }
+
+  // Calculate and update expected values based on current settings
+  void _updateExpectedValues() {
+    // First roll (Clash) expected successes
+    expectedSuccesses = calculateExpectedSuccesses(numDice.toDouble(), target);
+    _expectedSuccessPercentage = numDice > 0 ? expectedSuccesses / numDice : 0;
+
+    // Expected second dice (based on expected first successes)
+    double expectedSecondNumDice = expectedSuccesses;
+
+    // Second roll (Defence) expected successes
+    secondExpectedSuccesses =
+        calculateExpectedSuccesses(expectedSecondNumDice, secondTarget);
+    _secondExpectedSuccessPercentage = expectedSecondNumDice > 0
+        ? secondExpectedSuccesses / expectedSecondNumDice
+        : 0;
+
+    // Expected third dice (based on expected second fails)
+    double expectedThirdNumDice =
+        expectedSecondNumDice - secondExpectedSuccesses;
+
+    // Third roll (Resolve) expected successes
+    thirdExpectedSuccesses =
+        calculateExpectedSuccesses(expectedThirdNumDice, thirdTarget);
+    _thirdExpectedSuccessPercentage = expectedThirdNumDice > 0
+        ? thirdExpectedSuccesses / expectedThirdNumDice
+        : 0;
+
+    // Update expected wounds
+    double expectedDefenceFails =
+        expectedSecondNumDice - secondExpectedSuccesses;
+    double expectedResolveFails = expectedThirdNumDice - thirdExpectedSuccesses;
+    expectedWounds = expectedDefenceFails + expectedResolveFails;
   }
 
   // Start the second animation
@@ -183,14 +221,37 @@ class _WaveScreenState extends State<WaveScreen> with TickerProviderStateMixin {
     int defenceFails = secondNumDice - _secondSliderPosition;
     int resolveFails = thirdNumDice - _thirdSliderPosition;
 
-    // Calculate expected wounds
-    double expectedDefenceFails = secondNumDice - secondExpectedSuccesses;
-    double expectedResolveFails = thirdNumDice - thirdExpectedSuccesses;
-
     setState(() {
       totalWounds = defenceFails + resolveFails;
-      expectedWounds = expectedDefenceFails + expectedResolveFails;
     });
+  }
+
+  // Function to roll dice
+  int rollDice(int numDice, int target) {
+    if (numDice <= 0) return 0;
+
+    int count = 0;
+    for (int i = 0; i < numDice; i++) {
+      int roll = _random.nextInt(6) + 1;
+      if (roll <= target) count++;
+    }
+    return count;
+  }
+
+  // Function to calculate expected successes
+  double calculateExpectedSuccesses(double numDice, int target) {
+    return numDice * (target / 6);
+  }
+
+  // Roll dice action (formerly _onPressed in DiceRoller)
+  void _rollDice() {
+    print("Roll dice pressed. NumDice: $numDice, Target: $target"); // Debug
+    int result = rollDice(numDice, target);
+    double expectedSuccesses =
+        calculateExpectedSuccesses(numDice.toDouble(), target);
+
+    // Call the original update function with rolled results
+    _updateResults(result, numDice, expectedSuccesses);
   }
 
   // Triggered when Roll Dice button is pressed
@@ -201,6 +262,9 @@ class _WaveScreenState extends State<WaveScreen> with TickerProviderStateMixin {
     _controller.reset();
     _secondController.reset();
     _thirdController.reset();
+
+    // Store current expected wounds value to preserve it
+    double currentExpectedWounds = expectedWounds;
 
     setState(() {
       // Reset animation flags
@@ -218,9 +282,9 @@ class _WaveScreenState extends State<WaveScreen> with TickerProviderStateMixin {
       // Set the second dice number to the result of the first roll (hits)
       secondNumDice = result;
 
-      // Calculate expected successes for second roll (Defence)
+      // Calculate expected successes for second roll based on ACTUAL first result
       secondExpectedSuccesses =
-          calculateExpectedSuccesses(secondNumDice, secondTarget);
+          calculateExpectedSuccesses(secondNumDice.toDouble(), secondTarget);
       _secondExpectedSuccessPercentage =
           secondNumDice > 0 ? secondExpectedSuccesses / secondNumDice : 0;
 
@@ -230,9 +294,9 @@ class _WaveScreenState extends State<WaveScreen> with TickerProviderStateMixin {
       // Set the third dice number to the fails from the second roll
       thirdNumDice = secondNumDice - secondResult;
 
-      // Calculate expected successes for third roll (Resolve)
+      // Calculate expected successes for third roll based on ACTUAL second result fails
       thirdExpectedSuccesses =
-          calculateExpectedSuccesses(thirdNumDice, thirdTarget);
+          calculateExpectedSuccesses(thirdNumDice.toDouble(), thirdTarget);
       _thirdExpectedSuccessPercentage =
           thirdNumDice > 0 ? thirdExpectedSuccesses / thirdNumDice : 0;
 
@@ -249,10 +313,8 @@ class _WaveScreenState extends State<WaveScreen> with TickerProviderStateMixin {
       _secondSliderPosition = 0;
       _thirdSliderPosition = 0;
 
-      // Calculate expected wounds
-      double expectedDefenceFails = secondNumDice - secondExpectedSuccesses;
-      double expectedResolveFails = thirdNumDice - thirdExpectedSuccesses;
-      expectedWounds = expectedDefenceFails + expectedResolveFails;
+      // Keep the expected wounds value the same as before the roll
+      expectedWounds = currentExpectedWounds;
 
       // Initialize actual wounds to 0 instead of expected wounds
       totalWounds = 0;
@@ -263,55 +325,25 @@ class _WaveScreenState extends State<WaveScreen> with TickerProviderStateMixin {
     _animateWave(successPercentage, _controller, _updateFirstWave);
   }
 
-  // Helper functions
-  int rollDice(int numDice, int target) {
-    if (numDice <= 0) return 0;
-
-    int count = 0;
-    final random = Random();
-    for (int i = 0; i < numDice; i++) {
-      int roll = random.nextInt(6) + 1;
-      if (roll <= target) count++;
-    }
-    return count;
-  }
-
-  double calculateExpectedSuccesses(int numDice, int target) {
-    return numDice * (target / 6);
-  }
-
   // Target selectors change handlers
+  void _onFirstTargetChanged(int value) {
+    setState(() {
+      target = value;
+      _updateExpectedValues();
+    });
+  }
+
   void _onSecondTargetChanged(int value) {
     setState(() {
       secondTarget = value;
-
-      // Only update expected values, not actual dice rolls
-      secondExpectedSuccesses =
-          calculateExpectedSuccesses(secondNumDice, secondTarget);
-      _secondExpectedSuccessPercentage =
-          secondNumDice > 0 ? secondExpectedSuccesses / secondNumDice : 0;
-
-      // Update expected wounds
-      double expectedDefenceFails = secondNumDice - secondExpectedSuccesses;
-      double expectedResolveFails = thirdNumDice - thirdExpectedSuccesses;
-      expectedWounds = expectedDefenceFails + expectedResolveFails;
+      _updateExpectedValues();
     });
   }
 
   void _onThirdTargetChanged(int value) {
     setState(() {
       thirdTarget = value;
-
-      // Only update expected values, not actual dice rolls
-      thirdExpectedSuccesses =
-          calculateExpectedSuccesses(thirdNumDice, thirdTarget);
-      _thirdExpectedSuccessPercentage =
-          thirdNumDice > 0 ? thirdExpectedSuccesses / thirdNumDice : 0;
-
-      // Update expected wounds
-      double expectedDefenceFails = secondNumDice - secondExpectedSuccesses;
-      double expectedResolveFails = thirdNumDice - thirdExpectedSuccesses;
-      expectedWounds = expectedDefenceFails + expectedResolveFails;
+      _updateExpectedValues();
     });
   }
 
@@ -327,20 +359,57 @@ class _WaveScreenState extends State<WaveScreen> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        padding: EdgeInsets.all(
-            24.0), // Reduced padding to utilize more screen space
+        padding: EdgeInsets.all(24.0),
         child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
-              // Primary dice roller
-              DiceRoller(
-                onResult: _updateResults,
-                target: target, // Pass the target as a prop
-                hideResults: true, // Hide results display
+              // Dice roller UI (replacing DiceRoller widget)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // Roll Dice button on the left
+                  ElevatedButton(
+                    onPressed: _rollDice,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.deepPurple,
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 48,
+                        vertical: 24,
+                      ),
+                      textStyle: TextStyle(fontSize: 20),
+                    ),
+                    child: Text(
+                      'Roll Dice',
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+
+                  // Dice number selector
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Text('Dice:', style: TextStyle(fontSize: 20)),
+                      SizedBox(width: 20),
+                      TargetSelector(
+                        selectionLimit: 30,
+                        initialValue: numDice,
+                        textSize: 20,
+                        onChanged: (value) => setState(() {
+                          numDice = value;
+                          _updateExpectedValues();
+                        }),
+                      ),
+                    ],
+                  ),
+                ],
               ),
 
-              SizedBox(height: 10.0), // Reduced spacing after the dice roller
+              SizedBox(height: 10.0),
 
               // First wave slider section (Hits) with aligned title and target dropdown
               Row(
@@ -358,20 +427,12 @@ class _WaveScreenState extends State<WaveScreen> with TickerProviderStateMixin {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      //Text('Target:', style: TextStyle(fontSize: 20)),
                       SizedBox(width: 20),
                       TargetSelector(
                         selectionLimit: 6,
                         initialValue: target,
                         textSize: 20,
-                        onChanged: (value) => setState(() {
-                          target = value;
-                          // Update expected successes
-                          expectedSuccesses =
-                              calculateExpectedSuccesses(numDice, target);
-                          _expectedSuccessPercentage =
-                              numDice > 0 ? expectedSuccesses / numDice : 0;
-                        }),
+                        onChanged: _onFirstTargetChanged,
                       ),
                     ],
                   ),
@@ -404,7 +465,6 @@ class _WaveScreenState extends State<WaveScreen> with TickerProviderStateMixin {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      //Text('Target:', style: TextStyle(fontSize: 20)),
                       SizedBox(width: 20),
                       TargetSelector(
                         selectionLimit: 6,
@@ -443,7 +503,6 @@ class _WaveScreenState extends State<WaveScreen> with TickerProviderStateMixin {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      //Text('Target:', style: TextStyle(fontSize: 20)),
                       SizedBox(width: 20),
                       TargetSelector(
                         selectionLimit: 6,
@@ -464,22 +523,19 @@ class _WaveScreenState extends State<WaveScreen> with TickerProviderStateMixin {
                 onChanged: (double value) {},
               ),
 
-              SizedBox(
-                  height:
-                      15.0), // Slightly larger gap before the wounds counter
+              SizedBox(height: 15.0),
 
               // Wounds counter
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                width: 270, // Make the box slightly narrower
+                width: 270,
                 decoration: BoxDecoration(
                   color: Colors.red.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                      color: Colors.red, width: 1.5), // Thinner border
+                  border: Border.all(color: Colors.red, width: 1.5),
                 ),
                 child: Column(
-                  mainAxisSize: MainAxisSize.min, // Take minimum space needed
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     // Title
                     Text(
@@ -489,7 +545,7 @@ class _WaveScreenState extends State<WaveScreen> with TickerProviderStateMixin {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    SizedBox(height: 2), // Reduced spacing
+                    SizedBox(height: 2),
                     // Values row
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
