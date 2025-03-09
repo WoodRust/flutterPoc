@@ -45,7 +45,7 @@ class MainMenuScreen extends StatelessWidget {
             MyButton(
               onPressed: () {
                 audioController.playSfx(SfxType.buttonTap);
-                GoRouter.of(context).go('/waveslider');
+                GoRouter.of(context).go('/tabbedwaves');
               },
               child: const Text('Wave Slider'),
             ),

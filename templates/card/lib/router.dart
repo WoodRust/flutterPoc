@@ -26,8 +26,9 @@ final router = GoRouter(
       builder: (context, state) => const MainMenuScreen(key: Key('main menu')),
       routes: [
         GoRoute(
-          path: 'waveslider',
-          builder: (context, state) => const WaveScreen(key: Key('waveslider')),
+          path: 'tabbedwaves',
+          builder: (context, state) =>
+              const TabsContainerScreen(key: Key('waveslider')),
         ),
         GoRoute(
           path: 'simplebattlefield',
