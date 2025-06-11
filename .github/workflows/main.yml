@@ -32,7 +32,7 @@ jobs:
         with:
           distribution: 'zulu'
           java-version: '17'
-      - uses: subosito/flutter-action@f2c4f6686ca8e8d6e6d0f28410eeef506ed66aff
+      - uses: subosito/flutter-action@395322a6cded4e9ed503aebd4cc1965625f8e59a
         with:
           channel: ${{ matrix.flutter_version }}
       - run: ./flutter_ci_script_${{ matrix.flutter_version }}.sh
